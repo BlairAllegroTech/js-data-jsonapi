@@ -1,6 +1,6 @@
-﻿// Install .npm install
-//Visual studio build .npm run build 
-// To conect browser:  http://localhost:9876
+﻿// Install, .npm install
+// Visual studio build, .npm run build 
+// To connect browser:  http://localhost:9876
 var customLaunchers = {
     bs_ie9_windows7: {
         base: 'BrowserStack',

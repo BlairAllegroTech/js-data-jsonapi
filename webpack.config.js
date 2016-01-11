@@ -1,5 +1,5 @@
 module.exports = {
-    entry: './src/JsonApiAdapter.js',
+    entry: './ts-built/JsonApiAdapter.js',
   output: {
     filename: './dist/js-data-jsonapi.js',
     libraryTarget: 'umd',

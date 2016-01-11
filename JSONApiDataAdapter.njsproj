@@ -41,6 +41,7 @@
     <Content Include="LICENSE" />
     <Content Include="package.json" />
     <Content Include="README.md" />
+    <Content Include="tsconfig.json" />
     <Content Include="tslint.json" />
     <TypeScriptCompile Include="scripts\typings\js-data\DSUtil.d.ts" />
     <TypeScriptCompile Include="scripts\typings\js-data\JsonApiAdapter.d.ts" />
@@ -54,6 +55,7 @@
     <TypeScriptCompile Include="scripts\typings\node\node.d.ts" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="dist\" />
     <Folder Include="scripts\typings\mocha\" />
     <Folder Include="test\" />
     <Folder Include="src\" />
