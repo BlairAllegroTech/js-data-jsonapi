@@ -32,7 +32,7 @@ It ties
 
 
 ### Quick Start
-`npm install --save js-data js-data-http js-data-jsonapi` or `bower install --save js-data js-data-http js-data-http`.
+`npm install --save js-data js-data-http js-data-jsonapi` or `bower install --save js-data js-data-http js-data-jsonapi`.
 
 Load `js-data-jsonapi.js` after and `js-data-http.js` after `js-data.js`.
 
@@ -52,8 +52,8 @@ store.registerAdapter('jsonApi', adapter, { default: true });
 
 js-data-jsonapi uses a number of open source projects to work properly:
 
-* [js-data] - makes use of js-data apis for integration
-* [js-data-http][https://github.com/js-data/js-data-http] - Provides HTTP services!
+* [js-data](https://github.com/js-data/js-data) - makes use of js-data apis for integration
+* [js-data-http](https://github.com/js-data/js-data-http) - Provides HTTP services!
 
 ### License
 
