@@ -12,8 +12,6 @@ import JSDataHttp = require('js-data-http');
 import Helper = require('./JsonApiSerializer');
 export import JsonApi = require('./JsonApi');
 
-Helper.DSUTILS = <JSData.DSUtil>JSDataLib['DSUtils'];
-
 class Headers {
     common: { [name: string]: string };
 
@@ -90,18 +88,18 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                 if (response.status !== HttpNoContent && response.data.data) {
                     if (this.DSUtils.isArray(response.data.data)) {
                         this.DSUtils.forEach<JsonApi.JsonApiData>(response.data.data, (item: JsonApi.JsonApiData) => {
-                            if (item.type !== resourceConfig.name) {
+                            if (item.type !== resourceConfig.name && this.defaults.log) {
                                 this.defaults.log(
                                     'Warning: Json Api resource name missmatch, ' +
                                     'JsonApi:' + (item.type || 'missing') +
-                                    ', js-data:',  resourceConfig.name);
+                                    ', js-data:',  [resourceConfig.name]);
 
                                 item.type = resourceConfig.name;
                             }
                         });
                     } else {
                         var data: JsonApi.JsonApiData = response.data.data;
-                        if (data.type !== resourceConfig.name) {
+                        if (data.type !== resourceConfig.name && this.defaults.log) {
                             this.defaults.log(
                                 'Warning: Json Api resource name missmatch, ' +
                                 'JsonApi:' + (response.data.data['type'] || 'missing') +

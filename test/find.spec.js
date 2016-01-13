@@ -1,5 +1,6 @@
 ﻿describe('DSJsonAdapter.find(resourceConfig, id, options)', function () {
     
+    
     it('should make a GET request', function () {
         var _this = this;
         
@@ -14,6 +15,8 @@
         }, 30);
         
         return dsHttpAdapter.find(Post, 1).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
             assert.deepEqual(data, p1.model, 'post should have been found#1');
             
             setTimeout(function () {
@@ -28,6 +31,9 @@
             
             return dsHttpAdapter.find(Post, 1, { basePath: 'api2' });
         }).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+
             assert.deepEqual(data, p1.model, 'post should have been found#2');
             assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
         });
@@ -49,6 +55,9 @@
         }, 30);
         
         return Post.find(1, { urlPath: '/foo/bar/beep/boop/1' }).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+
             assert.equal(data.Id, p1.model.Id, 'post should have been found#3');
             assert.equal(queryTransform.callCount, 1, 'queryTransform should have been called twice');
         });
@@ -74,6 +83,8 @@
         }, 30);
         
         return dsHttpAdapter.find(Post, 1).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
             assert.deepEqual(data, p1.model, 'post should have been found');
             
             delete dsHttpAdapter.defaults.httpConfig.params;
@@ -153,10 +164,11 @@
             _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(DataWithRelation.jsonApiData));
         }, 30);
         
+
         return dsHttpAdapter.find(UserContainer, 1).then(function (data) {
             console.log("data(actual[0],expected[1]):", [data, DataWithRelation.model]);
-            assert.isDefined(data[0].containedposts[0].$_JSONAPIMETA_, 'should have json Api meta tag');
-            delete data[0].containedposts[0].$_JSONAPIMETA_;
+            // We are not testing meta data yet
+            ignoreMetaData(data);
             
             assert.deepEqual(data, DataWithRelation.model, 'container should have been found with included data');
         });

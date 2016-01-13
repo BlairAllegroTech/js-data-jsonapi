@@ -25,6 +25,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         }, 30);
         
         return dsHttpAdapter.create(Post, { author: 'John', age: 30 }).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+               
             assert.deepEqual(data, p1.model, 'post should have been created#1');
             
             setTimeout(function () {
@@ -48,6 +51,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
             
             return dsHttpAdapter.create(Post, { author: 'John', age: 30 }, { basePath: 'api2' });
         }).then(function (data) {
+            ignoreMetaData(data);
             assert.deepEqual(data, p1.model, 'post should have been created#2');
             assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
         });
@@ -78,6 +82,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         }, 30);
         
         return dsHttpAdapter.create(Post, [{ author: 'John', age: 30 }]).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+
             assert.deepEqual(data, p1.model, 'post should have been created#1');
         })
      });    
@@ -121,6 +128,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         }, 30);
             
         return dsHttpAdapter.create(TestUser, { author: 'John', age: 30 }, { basePath: 'api' }).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+
             assert.deepEqual(data.id, testData.model.id, 'post should have extracted primary key from response');
             assert.deepEqual(data, testData.model, 'post should have been created#3');
         });
@@ -165,6 +175,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         
         return dsHttpAdapter.create(TestUser, { author: 'John', age: 30 }, { basePath: 'api' }).then(function (data) {
             assert.deepEqual(data.TestPK, testData.model.TestPK, 'post should have extracted primary key from response');
+            
+            // We are not testing meta data yet
+            ignoreMetaData(data);
             assert.deepEqual(data, testData.model, 'post should have been created#3');
         });
 
@@ -201,6 +214,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         
         return dsHttpAdapter.create(Post, { author: 'John', age: 30 }).then(function (data) {
             console.log('Should Equal:(data,expected)', [data, p1.model]);
+            
+            // We are not testing meta data yet
+            ignoreMetaData(data);
             assert.deepEqual(data[0], p1.model[0], 'post should have been created with parent id set#1');
         });  
     });

@@ -11,9 +11,8 @@ var customLaunchers = {
     }
 };
 
-var singleRun = true;
+var singleRun = false;
 var browsers = ['PhantomJS'];
-
 //browsers = ['Chrome'];
 //singleRun = (false && browsers[0] === 'PhantomJS');
     

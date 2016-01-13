@@ -137,6 +137,10 @@ export class JsonApiRelationship {
         this.links[linkType] = link;
         return this;
     }
+
+    FindLinkType(linkType: string): string {
+        return (this.links && this.links[linkType]) ? this.links[linkType].href : null;
+    }
 }
 
 export class MetaLink {

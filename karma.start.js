@@ -2,6 +2,9 @@
 var dsHttpAdapter, UserContainer, User, Post, datastore, DSUtils, queryTransform;
 var p1, p11;
 var p2, p3, p4, p5;
+var ignoreMetaData;
+var JSONAPIMETATAG = '$_JSONAPIMETA_';
+
 
 // Helper globals
 var fail = function (msg) {
@@ -49,6 +52,29 @@ beforeEach(function () {
     
     DSUtils = JSData.DSUtils;
     datastore = new JSData.DS();
+    
+    ignoreMetaData = function (data) {
+        if (data) {
+            if (DSUtils.isArray(data)) {
+                DSUtils.forEach(data, function(item)  {
+                    // We are not testing meta data yet
+                    assert.isDefined(item[JSONAPIMETATAG], 'should have json Api meta tag');
+                    delete item[JSONAPIMETATAG];
+
+                    for (var prop in item) {
+                        if (DSUtils.isArray(item[prop])) {
+                            ignoreMetaData(item[prop]);
+                        }
+                    }
+                });
+            } else {
+                // We are not testing meta data yet
+                assert.isDefined(data[JSONAPIMETATAG], 'should have json Api meta tag');
+                delete data[JSONAPIMETATAG];
+            }
+
+        }
+    };    
     
     UserContainer = datastore.defineResource({
         name: 'container',

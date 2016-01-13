@@ -43,8 +43,14 @@
         _o: (obj: Object) => boolean;
         copy: <T>(source: T) => T;
         isArray: (obj: any) => boolean;
-        forEach: <T>(source: Array<T>, item: (item: T, index?: number, source?: Array<T>) => any) => void;
+        forEach: <T>(source: Array<T>, item: (item: T, index?: number, source?: Array<T>) => boolean | void) => void;
         resolveId: (definition, idOrInstance: any) => any;
         isString: (value: any) => boolean;
+
+        // see : http://moutjs.com/docs/v0.1.0/object.html
+        get : <T>(obj: Object, prop: string) => T;
+        set : (obj: Object, prop: string, value: any) => void;
+        contains: (obj1: Object, obj2: Object) => boolean;
+        keys: (obj: Object) => any[];
     }
 }

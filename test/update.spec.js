@@ -16,6 +16,9 @@
         }, 30);
         
         return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+
             assert.deepEqual(data, p1.model, 'post 1 should have been updated#1');
             
             setTimeout(function () {
@@ -32,6 +35,9 @@
             
             return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }, { basePath: 'api2' });
         }).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+
             assert.deepEqual(data, p1.model, 'post 1 should have been updated#2');
             assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
         });
@@ -53,6 +59,9 @@
         }, 30);
         
         return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }).then(function (data) {
+            // We are not testing meta data yet
+            ignoreMetaData(data);
+
             assert.deepEqual(data, p1.model, 'post 1 should have been updated and data returned to datastore even though server returned no content');
         });
     });
