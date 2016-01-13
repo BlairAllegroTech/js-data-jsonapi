@@ -153,7 +153,7 @@
     // Json api specific tests
     it('should make a GET request and correctly deserialize returned included data', function () {
         var _this = this;
-        
+
         setTimeout(function () {
             assert.equal(1, _this.requests.length);
             assert.equal(_this.requests[0].url, 'api/container/1');

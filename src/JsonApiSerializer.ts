@@ -20,7 +20,7 @@ const jsDataHasOne: string = 'hasOne';
 
 let DSUTILS: JSData.DSUtil = JSDataLib['DSUtils'];
 
-class MetaData implements JsonApiAdapter.JsonApiMetaData {
+export class MetaData implements JsonApiAdapter.JsonApiMetaData {
     selfLink: string;
     isJsonApiReference: boolean;
     relationships: { [relation: string]: string };
@@ -39,6 +39,14 @@ class MetaData implements JsonApiAdapter.JsonApiMetaData {
     loadRelatedLink(relatedName: string): string {
         if (this.relationships[relatedName]) {
             return this.relationships[relatedName];
+        } else {
+            return undefined;
+        }
+    }
+
+    static TryGetMetaData(obj: Object): MetaData {
+        if (obj) {
+            return DSUTILS.get<MetaData>(obj, JSONAPI_META);
         } else {
             return undefined;
         }

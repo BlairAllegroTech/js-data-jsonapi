@@ -138,6 +138,11 @@ export class JsonApiRelationship {
         return this;
     }
 
+    WithLink(linkType: string, url: string): JsonApiRelationship {
+        this.links[linkType] =  new MetaLink(url);
+        return this;
+    }
+
     FindLinkType(linkType: string): string {
         return (this.links && this.links[linkType]) ? this.links[linkType].href : null;
     }
@@ -147,14 +152,18 @@ export class MetaLink {
     href: string;
     meta: Meta;
 
-    constructor(href: string, meta: Meta = null) {
+    constructor(href: string, meta?: Meta) {
         this.href = href;
-        this.meta = meta;
+        this.meta = meta || new Meta();
     }
 }
 
 export class Meta {
     fields: { [key: string]: string; };
+
+    constructor() {
+        this.fields = {};
+    }
 }
 
 export class JsonApiError {

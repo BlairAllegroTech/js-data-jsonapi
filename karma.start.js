@@ -94,7 +94,7 @@ beforeEach(function () {
     
     User = datastore.defineResource({
         name: 'user', 
-        idAttribute: 'Id'        
+        idAttribute: 'Id'
     });
 
     Post = datastore.defineResource({
@@ -122,7 +122,7 @@ beforeEach(function () {
     
     p1 = {};
     p1.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
-    p1.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')                        
+    p1.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
         .WithAttribute('author', 'John')
         .WithAttribute('age', 30));
     p1.model = [{ Id: '5', age: 30, author: 'John', }]; //ISMODEL: true, type: 'posts'

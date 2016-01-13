@@ -58,7 +58,7 @@ module.exports = function (config) {
         reporters: ['dots', 'coverage', 'junit'],
         
         preprocessors: {
-            'dist/js-data-jsonapi.js': ['coverage']
+            //'dist/js-data-jsonapi.js': ['coverage']
         },
         
         // optionally, configure the reporter

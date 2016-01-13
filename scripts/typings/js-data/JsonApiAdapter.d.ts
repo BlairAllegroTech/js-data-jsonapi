@@ -7,6 +7,9 @@ declare module JsonApiAdapter {
 
         http?: any;
         headers: any;
+
+        // If required pass json api specific options on here
+        jsonApi? : any
     }
 
     export interface DSJsonApiAdapter extends JSData.IDSAdapter {

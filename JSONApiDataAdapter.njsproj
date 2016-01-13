@@ -74,6 +74,7 @@
     <Compile Include="test\create.spec.js" />
     <Compile Include="test\destroy.spec.js" />
     <Compile Include="test\find.spec.js" />
+    <Compile Include="test\loadrelations.spec.js" />
     <Compile Include="test\update.spec.js" />
     <Compile Include="webpack.config.js" />
   </ItemGroup>

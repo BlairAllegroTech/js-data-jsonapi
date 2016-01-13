@@ -130,12 +130,13 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         * @desc Override DSHttpAdapter get path to use stored JsonApi self link if available
         * @param {string} method Http Method name
         * @param {JSData.DSResourceDefinition} Resourceconfigurations
-        * @param {Object} id Resource ID, primary key
+        * @param {Object} id Resource ID, primary key Number or query parameters
         * @param {JSData.DSConfiguration} options override default configuration options
         * @returns {string} JsonApi rest service Url
         * @memberOf JsonApiAdapter
         */
     getPath(method: string, resourceConfig: JSData.DSResourceDefinition<any>, id: Object, options: JSData.DSConfiguration): string {
+
         //Get the resource item
         var item: JsonApi.JsonApiData;
         if (this.DSUtils._sn(id)) {
@@ -144,11 +145,41 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
             item = <any>id;
         }
 
+        if (method === 'findAll') {
+            // EXPERIMENTAL CODE
+            // Here id is a params object that contains aprent id., actuallly options.params
+            // The resource is the definition of the child items of the parent that will be returned.
+            // We want the parent so that we can get the related link from it of the relationship originally passed to loadRelations
+            // ANOTHER options is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
+
+            //[1] Get back the parent object referenced in finaAll / loadRelations
+            let parentResourceName = (<any>resourceConfig).parent;
+            let foreignKeyName = (<any>resourceConfig).parentKey;
+            if (parentResourceName && foreignKeyName && (<any>options).params && ((<any>options).params)[foreignKeyName]) {
+                let pk = ((<any>options).params)[foreignKeyName];
+                let parentResource: JSData.DSResourceDefinition<any> = (<any>resourceConfig.getResource(parentResourceName));
+                var parentItem = parentResource.get(pk);
+                if (parentItem) {
+                    var metaData = Helper.MetaData.TryGetMetaData(parentItem);
+                    if (metaData) {
+                        var relationLink = metaData.relationships[resourceConfig.name];
+                        if (relationLink) {
+                            (<any>options).params = {};
+                            return relationLink;
+                        }
+                    }
+                }
+            }
+        }
+
         //var pk = this.DSUtils.resolveId(resourceConfig, id);
         //rejectvar item = resourceConfig.get(<any>pk);
 
         // See if we have the item self link stored, if so useit directly
-        var url = (item && item.GetSelfLink) ? item.GetSelfLink() : null;
+        var url = (item && item.GetSelfLink)
+            ? item.GetSelfLink()
+            : null;
+
         return url ? url : this.adapterGetPath.apply(this.adapter, [method, resourceConfig, id, options]);
     }
 
