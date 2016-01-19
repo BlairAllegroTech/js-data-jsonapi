@@ -10,8 +10,7 @@
                         .WithLink('related', 'http://xxx/container/1/posts')
                         .WithData('posts', '5')
         ));
-        
-        
+
         setTimeout(function () {
             assert.equal(1, _this.requests.length);
             assert.equal(_this.requests[0].url, 'api/container/1');
@@ -21,8 +20,8 @@
             
             _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(container));
         }, 30);
-        
-        return UserContainer.find(1, { bypassCache: true }).then(function (data) {
+
+        return UserContainer.find(1).then(function (data) {
             assert.equal(queryTransform.callCount, 1, 'queryTransform should have been called once');
             assert.isDefined(data, 'post response recieved');
             assert.isDefined(data.length, 'post response is array');
@@ -41,8 +40,7 @@
                     .WithAttribute('author', 'Mark')
                     .WithAttribute('age', 25)
                 );
-            
-            
+
             setTimeout(function () {
                 assert.equal(2, _this.requests.length);
                 assert.equal(_this.requests[1].url, 'http://xxx/container/1/posts');
@@ -50,11 +48,10 @@
                 
                 _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(postList));
             }, 30);
-            
 
             var parent = data[0];
             var link = parent[JSONAPIMETATAG].relationships['posts'];
-            
+
             // I believe the line below and the subsequent call to Post.findAll are equivelent
             // However the call beloe to "loadRelations" is more meaning full in terms of what we are trying to do.
             // The problem is that js-data is being too smart, we want the parameters passed!! 
@@ -64,9 +61,9 @@
             // eventually findAll is called on the data adabter!!
             // Please review, see  JsonApiAdapter.getPath code inside of  if (method === 'findAll') where i am trying to get the 
             // parent and the relationship info!!!!
-            return UserContainer.loadRelations(1, 'posts', { bypassCache: true }).then(function (data) {
+            return UserContainer.loadRelations(1, 'posts').then(function (data) {
                 assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
-                
+
                 assert.isDefined(UserContainer.get(1), 'Container 1 exists');
                 assert.isDefined(UserContainer.get(1).containedposts, 'Posts  exist');
                 assert.isDefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has at least 1 child post');
@@ -74,7 +71,7 @@
 
                 assert.equal(UserContainer.get(1).containedposts[0].Id, 5, 'UserContainer 1 has child post 5');
                 assert.equal(UserContainer.get(1).containedposts[1].Id, 10, 'UserContainer 1 has child post 10');
-                
+
                 Post.ejectAll();
                 assert.isUndefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has child post 5, ejected');
                 
@@ -82,22 +79,22 @@
                     assert.equal(3, _this.requests.length);
                     assert.equal(_this.requests[2].url, 'http://xxx/container/1/posts');
                     assert.equal(_this.requests[2].method, 'GET');
-                    
+
                     _this.requests[2].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(postList));
                 }, 30);
 
-                return Post.findAll({ containerid: parent.Id }, { bypassCache: true }).then(function (data) {
+                return Post.findAll({ containerid: parent.Id }).then(function (data) {
                     assert.equal(queryTransform.callCount, 3, 'queryTransform should have been called 3 times');
-                    
+
                     assert.isDefined(UserContainer.get(1), 'Container 1 exists');
                     assert.isDefined(UserContainer.get(1).containedposts, 'Posts 1 exist');
-                    
+
                     assert.isDefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has at least 1 child post');
                     assert.isDefined(UserContainer.get(1).containedposts[1], 'UserContainer 1 has 2 child posts 10');
                     
                     assert.equal(UserContainer.get(1).containedposts[0].Id, 5, 'UserContainer 1 has child post 5');
                     assert.equal(UserContainer.get(1).containedposts[1].Id, 10, 'UserContainer 1 has child post 10');
-                
+
                 });
             });
         });
