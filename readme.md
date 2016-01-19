@@ -10,17 +10,17 @@ It ties
 1. Serialize JsonApi requests (Status: code complete, some tests).
 1. When deserializing JsonApi data add 'ParentIds' so that js-data **belongsTo** relationships can work (Status: code complete, some tests). 
 1. When deserializing JsonApi data add **'LocalKey/LocalKeys'** or **'ForeignKeys'** depending on js-data configurations so that js-data **hasOne** and **hasMany** relationships can work (Status: code complete, some tests). 
-1. Add metadata to indicate if anobject is a jsonApi reference, indicating thhat it is partually populated only (Status: code complete, some tests).
+1. Add metadata to indicate if an object is a jsonApi reference, indicating that it is partually populated only (Status: code complete, some tests).
 1. Transparenetly request full objects when requested from js-data cache and object is a jsonApi reference only, e.g. Not fully populated (Not started).
-1. Store hyperlinking data within metadata of stored data (Not started).
-1. Use metadata hyperlinks to request related data from JsonApi data store (Barley started).
+1. Store hyperlinking data within metadata of stored data (Experimental).
+1. Use metadata hyperlinks to request related data from JsonApi data store (Experimental).
 1. Use metadata hyperlinks to add new items to relationships (Not started).
 
 ### Known Issues
-1. Testing is by no menas complete, there are many more scenarios that need to be covered off.
+1. Testing is by no means complete, there are many more scenarios that need to be covered off.
 1. None of the xxxxAll adapter methods have been tested yet. e.g  findAll, destroyAll, updateAll
 1. Bower package has not been tested
-1. The code creates the DSHttpDataAdapter internally,however i believe for example that there is an angular specific version. The HttpAdapter may not be created correctly using this package.
+1. The code creates the DSHttpDataAdapter internally, however i believe for example that there is an angular specific version. The HttpAdapter may not be created correctly using this package.
    - Allow the adpater to be injected or a constructor function passed via constructor options.
 1. Code has been developed using typescript, the generated java-script code DOES NOT pass jslint.
    - Could add typescript linting or port to compliant js by had.But i prefer to work in typescript as i am not a pro javascript developer and typescript checks lets you know when you nake mistakes!!
