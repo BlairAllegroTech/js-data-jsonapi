@@ -56,11 +56,11 @@ beforeEach(function () {
     ignoreMetaData = function (data) {
         if (data) {
             if (DSUtils.isArray(data)) {
-                DSUtils.forEach(data, function(item)  {
+                DSUtils.forEach(data, function (item) {
                     // We are not testing meta data yet
                     assert.isDefined(item[JSONAPIMETATAG], 'should have json Api meta tag');
                     delete item[JSONAPIMETATAG];
-
+                    
                     for (var prop in item) {
                         if (DSUtils.isArray(item[prop])) {
                             ignoreMetaData(item[prop]);
@@ -74,7 +74,7 @@ beforeEach(function () {
             }
 
         }
-    };    
+    };
     
     UserContainer = datastore.defineResource({
         name: 'container',
@@ -88,10 +88,45 @@ beforeEach(function () {
                     foreignKey: 'containerid'
                 }
             }
+        },
+        
+        methods: {
+            loadPosts : function () {
+                var hasReferenceData = false;
+                var link = this[JSONAPIMETATAG].relationships['posts'];
+
+                if (this.containedposts) {
+                    DSUtils.forEach(this.containedposts, function (item) {
+                        if (item && item[JSONAPIMETATAG] && item[JSONAPIMETATAG].isJsonApiReference === true) {
+                            hasReferenceData = true;
+                        }
+                    });
+                }
+
+
+                if (hasReferenceData === true && this[JSONAPIMETATAG] && this[JSONAPIMETATAG].relationships['posts']) {
+                    return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: true });
+                } else {
+                    DSUtils.Promise.resolve(this.containedposts);
+                }
+
+                //return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: false}).then(function (data) {
+                //    if (data && DSUtils.isArray(data)) {
+                //        DSUtils.forEach(data, function (item) {
+                //            if (item && item[JSONAPIMETATAG] && item[JSONAPIMETATAG].isJsonApiReference === true) {
+                //                hasReferenceData = true;
+                //            }
+                //        });
+                //    }
+                //}).then(function (data) {
+                //    if (hasReferenceData === true) {
+                //        return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: true });
+                //    }
+                //});
+            }
         }
     });
-    
-    
+
     User = datastore.defineResource({
         name: 'user', 
         idAttribute: 'Id'
