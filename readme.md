@@ -3,38 +3,41 @@ JsonApi Adapter for [js-data](www.js-data.io)
 This adapter implements the [JsonApi Protocol](http://jsonapi.org/) and ties it to a js-data data store.
 
 It ties 
- - JsonApi **types** to js-data **resource**
- - JsonApi **relations** to js-data **toOne, toMany Relationships**
+- JsonApi **types** to js-data **resource**
+- JsonApi **relations** to js-data **toOne, toMany Relationships**
 
 ##Goals
-1. Serialize JsonApi requests (Status: code complete, some tests).
-1. When deserializing JsonApi data add 'ParentIds' so that js-data **belongsTo** relationships can work (Status: code complete, some tests). 
-1. When deserializing JsonApi data add **'LocalKey/LocalKeys'** or **'ForeignKeys'** depending on js-data configurations so that js-data **hasOne** and **hasMany** relationships can work (Status: code complete, some tests). 
-1. Add metadata to indicate if an object is a jsonApi reference, indicating that it is partually populated only (Status: code complete, some tests).
-1. Transparenetly request full objects when requested from js-data cache and object is a jsonApi reference only, e.g. Not fully populated (Not started).
-1. Store hyperlinking data within metadata of stored data (Experimental).
-1. Use metadata hyperlinks to request related data from JsonApi data store (Experimental).
-1. Use metadata hyperlinks to add new items to relationships (Not started).
+|Goal|Status|
+|----|------|
+|Serialize JsonApi requests|code complete, some tests|
+|When deserializing JsonApi data add 'ParentIds' so that js-data **belongsTo** relationships can work|code complete, some tests|
+|When deserializing JsonApi data add **'LocalKey/LocalKeys'** or **'ForeignKeys'** depending on js-data configurations so that js-data **hasOne** and **hasMany** relationships can work|code complete, some tests|
+|Add metadata to indicate if an object is a jsonApi reference, indicating that it is partually populated only|code complete, some tests|
+|Transparenetly request full objects when requested from js-data cache and object is a jsonApi reference only, e.g. Not fully populated| Started|
+|Store hyperlinking data within metadata of stored data|Started|
+|Use metadata hyperlinks to request related data from JsonApi data store|Started|
+|Use metadata hyperlinks to add new items to relationships|Not started|
 
 ### Known Issues
 1. Testing is by no means complete, there are many more scenarios that need to be covered off.
 1. None of the xxxxAll adapter methods have been tested yet. e.g  findAll, destroyAll, updateAll
 1. Bower package has not been tested
 1. The code creates the DSHttpDataAdapter internally, however i believe for example that there is an angular specific version. The HttpAdapter may not be created correctly using this package.
-   - Allow the adpater to be injected or a constructor function passed via constructor options.
+- Allow the adpater to be injected or a constructor function passed via constructor options.
 1. Code has been developed using typescript, the generated java-script code DOES NOT pass jslint.
-   - Could add typescript linting or port to compliant js by had.But i prefer to work in typescript as i am not a pro javascript developer and typescript checks lets you know when you nake mistakes!!
-   - tslint using microsoft recommended rules still some outstanding lint issues
+- Could add typescript linting or port to compliant js by had.But i prefer to work in typescript as i am not a pro javascript developer and typescript checks lets you know when you nake mistakes!!
+- tslint using microsoft recommended rules still some outstanding lint issues
 1. Code is some what brittle in terms of requiring your js-data configuration to match very closely your jsonApi
-   - Could look at adding additional configuration to allow flexable mapping between js-data and jsonapi
+- Could look at adding additional configuration to allow flexable mapping between js-data and jsonapi
+- Further documentation required ilistrating the relationships between JsonApi data structure and js-data configuration
 1. I haven't actually tested this against a jsonApi implementation yet like ember, but i have had previous experience with jsonApi and am fairly confident that this implementation is good.
-   - More testing to be done......
+- More testing to be done......
 
 
 ### Quick Start
 `npm install --save js-data js-data-http js-data-jsonapi` or `bower install --save js-data js-data-http js-data-jsonapi`.
 
-Load `js-data-jsonapi.js` after and `js-data-http.js` after `js-data.js`.
+Load `js-data-jsonapi.js` after  `js-data-http.js` and after `js-data.js`.
 
 ```js
 var adapter = new DSJsonApiAdapter.JsonApiAdapter();
