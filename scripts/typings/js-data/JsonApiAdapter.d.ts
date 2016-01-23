@@ -26,6 +26,6 @@ declare module JsonApiAdapter {
     export interface JsonApiMetaData {
         isJsonApiReference: boolean;
         selfLink: string;
-        relationships: { [relation: string]: string };
+        relationships: { [relation: string]: Object };
     }
 }

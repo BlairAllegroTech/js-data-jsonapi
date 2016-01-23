@@ -23,7 +23,7 @@ let DSUTILS: JSData.DSUtil = JSDataLib['DSUtils'];
 export class MetaData implements JsonApiAdapter.JsonApiMetaData {
     selfLink: string;
     isJsonApiReference: boolean;
-    relationships: { [relation: string]: string };
+    relationships: { [relation: string]: Object };
 
     constructor() {
         this.selfLink = null;
@@ -31,14 +31,15 @@ export class MetaData implements JsonApiAdapter.JsonApiMetaData {
         this.relationships = {};
     }
 
-    WithRelationshipLink(relation: string, url: string): MetaData {
-        this.relationships[relation] = url;
+    WithRelationshipLink(relationName: string, linkType: string, url: string): MetaData {
+        this.relationships[relationName] = this.relationships[relationName] || {};
+        this.relationships[relationName][linkType] = url;
         return this;
     }
 
-    loadRelatedLink(relatedName: string): string {
-        if (this.relationships[relatedName]) {
-            return this.relationships[relatedName];
+    relatedLink(relationName: string): string {
+        if (this.relationships[relationName]) {
+            return this.relationships[relationName]['related'];
         } else {
             return undefined;
         }
@@ -542,7 +543,7 @@ export class JsonApiHelper {
         }
 
         // If the object has any belongs to relations extract parent id and set on object
-        metaData.WithRelationshipLink(JSONAPI_PARENT_LINK, JsonApiHelper.setParentIds(options, data, fields));
+        metaData.WithRelationshipLink(JSONAPI_PARENT_LINK, JSONAPI_PARENT_LINK, JsonApiHelper.setParentIds(options, data, fields));
 
         options.resourceDef.beforeInject = (resource: JSData.DSResourceDefinition<any>, dataList: any): void => {
             // Merge a json api reference with a fully populated resource that has been previously retrieved
@@ -586,7 +587,7 @@ export class JsonApiHelper {
                             '.Your js-data store configuration does not match your jsonapi data structure');
                     } else {
                         // Add relationship to meta data, so that we can use this to lazy load relationship as requiredin the future
-                        metaData.WithRelationshipLink(relationshipDef.relation, relationship.FindLinkType('related'));
+                        metaData.WithRelationshipLink(relationshipDef.relation, 'related', relationship.FindLinkType('related'));
                     }
 
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"

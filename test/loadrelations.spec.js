@@ -51,7 +51,7 @@
             }, 30);
 
             var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['posts'];
+            var link = parent[JSONAPIMETATAG].relationships['posts']['related'];
             assert.equal(link, 'http://xxx/container/1/posts')
 
             // I believe the line below and the subsequent call to Post.findAll are equivelent
@@ -153,7 +153,7 @@
             }, 30);
 
             var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['posts'];
+            var link = parent[JSONAPIMETATAG].relationships['posts']['related'];
             assert.equal(link, 'http://xxx/container/1/posts')
 
             // This call has the same effect as the above to load related data
@@ -230,12 +230,12 @@
             
             
             var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['posts'];
+            var link = parent[JSONAPIMETATAG].relationships['posts']['related'];
             assert.equal(link, 'http://xxx/container/1/posts')
             
             // This call has the same effect as the above to load related data
             //return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: true })
-            return  parent.loadPosts().then(function (data) {
+            return  parent.findRelatePosts().then(function (data) {
                 assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called 3 times');
 
                 assert.isDefined(UserContainer.get(1), 'Container 1 exists');

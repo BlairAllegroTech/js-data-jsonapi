@@ -89,40 +89,29 @@ beforeEach(function () {
                 }
             }
         },
-        
+
         methods: {
-            loadPosts : function () {
+
+            //Experimental mechanisum for loading  jsonApi related/relationships data
+            findRelatePosts : function () {
                 var hasReferenceData = false;
-                var link = this[JSONAPIMETATAG].relationships['posts'];
+                var link = DSUtils.get(this, JSONAPIMETATAG + '.relationships.posts.related');
 
                 if (this.containedposts) {
                     DSUtils.forEach(this.containedposts, function (item) {
-                        if (item && item[JSONAPIMETATAG] && item[JSONAPIMETATAG].isJsonApiReference === true) {
+                        if(DSUtils.get(item, JSONAPIMETATAG + '.isJsonApiReference')){
                             hasReferenceData = true;
+                            // Exit the for loop early
+                            return false;
                         }
                     });
                 }
 
-
-                if (hasReferenceData === true && this[JSONAPIMETATAG] && this[JSONAPIMETATAG].relationships['posts']) {
+                if (hasReferenceData === true && link) {
                     return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: true });
                 } else {
                     DSUtils.Promise.resolve(this.containedposts);
                 }
-
-                //return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: false}).then(function (data) {
-                //    if (data && DSUtils.isArray(data)) {
-                //        DSUtils.forEach(data, function (item) {
-                //            if (item && item[JSONAPIMETATAG] && item[JSONAPIMETATAG].isJsonApiReference === true) {
-                //                hasReferenceData = true;
-                //            }
-                //        });
-                //    }
-                //}).then(function (data) {
-                //    if (hasReferenceData === true) {
-                //        return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: true });
-                //    }
-                //});
             }
         }
     });

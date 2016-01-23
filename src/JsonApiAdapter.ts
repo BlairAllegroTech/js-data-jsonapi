@@ -162,7 +162,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                 if (parentItem) {
                     var metaData = Helper.MetaData.TryGetMetaData(parentItem);
                     if (metaData) {
-                        var relationLink = metaData.relationships[resourceConfig.name];
+                        var relationLink = this.DSUtils.get<string>(metaData, ['relationships', resourceConfig.name, 'related'].join('.'));
                         if (relationLink) {
                             (<any>options).params = {};
                             return relationLink;
