@@ -147,10 +147,10 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
 
         if (method === 'findAll') {
             // EXPERIMENTAL CODE
-            // Here id is a params object that contains aprent id., actuallly options.params
-            // The resource is the definition of the child items of the parent that will be returned.
-            // We want the parent so that we can get the related link from it of the relationship originally passed to loadRelations
-            // ANOTHER options is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
+            // Here id is a params object that contains a parent id (actuallly stoed in options.params)
+            // The resource is the definition of the child items (which we intend to return).
+            // We want to get hold of the the parent Id, so that we can get the related link from it, of the relationship originally passed to loadRelations.
+            // ANOTHER option is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
 
             //[1] Get back the parent object referenced in finaAll / loadRelations
             let parentResourceName = (<any>resourceConfig).parent;
