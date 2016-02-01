@@ -5,7 +5,7 @@
         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
             .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
                 .WithLink('self', '/container/1')
-                .WithRelationship('posts', 
+                .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
                         .WithLink('related', 'http://xxx/container/1/posts')
                         .WithData('posts', '5')
@@ -28,7 +28,7 @@
             assert.isDefined(data.length, 'post response is array');
             assert.equal(data[0].Id, '1', 'post PK 1 should have been found');
 
-            assert.isDefined(data[0][JSONAPIMETATAG].relationships['posts'], 'json api relationship for "posts", should exist');
+            assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
             var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                 .WithLink('self', '/container/1/posts')
                 .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
@@ -51,7 +51,7 @@
             }, 30);
 
             var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['posts']['related'];
+            var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
             assert.equal(link, 'http://xxx/container/1/posts')
 
             // I believe the line below and the subsequent call to Post.findAll are equivelent
@@ -63,7 +63,7 @@
             // eventually findAll is called on the data adabter!!
             // Please review, see  JsonApiAdapter.getPath code inside of  if (method === 'findAll') where i am trying to get the 
             // parent and the relationship info!!!!
-            return UserContainer.loadRelations(1, 'posts').then(function (data) {
+            return UserContainer.loadRelations(1, ['containedposts']).then(function (data) {
                 assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
 
                 assert.isDefined(UserContainer.get(1), 'Container 1 exists');
@@ -108,7 +108,7 @@
         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
             .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
                 .WithLink('self', '/container/1')
-                .WithRelationship('posts', 
+                .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
                         .WithLink('related', 'http://xxx/container/1/posts')
                         .WithData('posts', '5')
@@ -130,7 +130,7 @@
             assert.isDefined(data.length, 'post response is array');
             assert.equal(data[0].Id, '1', 'post PK 1 should have been found');
             
-            assert.isDefined(data[0][JSONAPIMETATAG].relationships['posts'], 'json api relationship for "posts", should exist');
+            assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
             var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                 .WithLink('self', '/container/1/posts')
                 .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
@@ -153,12 +153,12 @@
             }, 30);
 
             var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['posts']['related'];
+            var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
             assert.equal(link, 'http://xxx/container/1/posts')
 
             // This call has the same effect as the above to load related data
             //parent.loadPosts().then(function (data) {
-            return Post.findAll({ containerid: parent.Id, urlPath: link }).then(function (data) {
+            return Post.findAll({ containerid: parent.Id }, { bypassCache: true, jsonApi: { jsonApiPath: link }}).then(function (data) {
                 assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called 3 times');
 
                 assert.isDefined(UserContainer.get(1), 'Container 1 exists');
@@ -180,7 +180,7 @@
         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
             .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
                 .WithLink('self', '/container/1')
-                .WithRelationship('posts', 
+                .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
                         .WithLink('related', 'http://xxx/container/1/posts')
                         .WithData('posts', '5')
@@ -202,7 +202,7 @@
             assert.isDefined(data.length, 'post response is array');
             assert.equal(data[0].Id, '1', 'post PK 1 should have been found');
             
-            assert.isDefined(data[0][JSONAPIMETATAG].relationships['posts'], 'json api relationship for "posts", should exist');
+            assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
             var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                 .WithLink('self', '/container/1/posts')
                 .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
@@ -230,7 +230,8 @@
             
             
             var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['posts']['related'];
+            
+            var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
             assert.equal(link, 'http://xxx/container/1/posts')
             
             // This call has the same effect as the above to load related data

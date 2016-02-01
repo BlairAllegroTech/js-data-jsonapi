@@ -1,8 +1,11 @@
 ﻿// Setup global test variables
-var dsHttpAdapter, UserContainer, User, Post, datastore, DSUtils, queryTransform;
+var JSData, DSUtils;
+
+var dsHttpAdapter, UserContainer, User, Post, datastore, queryTransform;
 var p1, p11;
 var p2, p3, p4, p5;
-var ignoreMetaData;
+var examples = {};
+//var ignoreMetaData, loadJSON;
 var JSONAPIMETATAG = '$_JSONAPIMETA_';
 
 
@@ -14,6 +17,55 @@ var fail = function (msg) {
         assert.equal('should not reach this!: ' + msg, 'failure');
     }
 };
+
+function loadJSON(file) {
+    
+    return new DSUtils.Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', file);
+        xhr.onload = function () {
+            if (this.status >= 200 && this.status < 300) {
+                resolve(xhr.response);
+            } else {
+                reject({
+                    status: this.status,
+                    statusText: xhr.statusText
+                });
+            }
+        };
+        xhr.onerror = function () {
+            reject({
+                status: this.status,
+                statusText: xhr.statusText
+            });
+        };
+        xhr.send();
+    });
+};
+
+var ignoreMetaData = function (data) {
+    if (data) {
+        if (DSUtils.isArray(data)) {
+            DSUtils.forEach(data, function (item) {
+                // We are not testing meta data yet
+                assert.isDefined(item[JSONAPIMETATAG], 'should have json Api meta tag');
+                delete item[JSONAPIMETATAG];
+                
+                for (var prop in item) {
+                    if (DSUtils.isArray(item[prop])) {
+                        ignoreMetaData(item[prop]);
+                    }
+                }
+            });
+        } else {
+            // We are not testing meta data yet
+            assert.isDefined(data[JSONAPIMETATAG], 'should have json Api meta tag');
+            delete data[JSONAPIMETATAG];
+        }
+
+    }
+};
+
 var TYPES_EXCEPT_STRING = [123, 123.123, null, undefined, {}, [], true, false, function () {
     }];
 var TYPES_EXCEPT_STRING_OR_ARRAY = [123, 123.123, null, undefined, {}, true, false, function () {
@@ -36,46 +88,44 @@ var TYPES_EXCEPT_BOOLEAN = ['string', 123, 123.123, null, undefined, {}, [], fun
     }];
 var TYPES_EXCEPT_FUNCTION = ['string', 123, 123.123, null, undefined, {}, [], true, false];
 
-// Setup before each test
-beforeEach(function () {
-    var JSData;
+
+  
+
+//Setup
+
+before(function () {
     if (!window && typeof module !== 'undefined' && module.exports) {
         JSData = require('js-data');
     } else {
         JSData = window.JSData;
     }
     
+    DSUtils = JSData.DSUtils;
+    
+    
+    //Load examples
+    examples.oneToMany = {
+        config: {}, 
+        json: {}
+    };
+    
+    return loadJSON('/base/examples/oneToMany/OneToMany.json').then(function (json) {
+        examples.oneToMany.json = json;
+    });
+           
+});
+
+// Setup before each test
+beforeEach(function () {
+                
     queryTransform = function (resourceName, query) {
         queryTransform.callCount += 1;
         return query;
     };
     
-    DSUtils = JSData.DSUtils;
+    
     datastore = new JSData.DS();
-    
-    ignoreMetaData = function (data) {
-        if (data) {
-            if (DSUtils.isArray(data)) {
-                DSUtils.forEach(data, function (item) {
-                    // We are not testing meta data yet
-                    assert.isDefined(item[JSONAPIMETATAG], 'should have json Api meta tag');
-                    delete item[JSONAPIMETATAG];
-                    
-                    for (var prop in item) {
-                        if (DSUtils.isArray(item[prop])) {
-                            ignoreMetaData(item[prop]);
-                        }
-                    }
-                });
-            } else {
-                // We are not testing meta data yet
-                assert.isDefined(data[JSONAPIMETATAG], 'should have json Api meta tag');
-                delete data[JSONAPIMETATAG];
-            }
 
-        }
-    };
-    
     UserContainer = datastore.defineResource({
         name: 'container',
         basePath : 'api',
@@ -95,7 +145,7 @@ beforeEach(function () {
             //Experimental mechanisum for loading  jsonApi related/relationships data
             findRelatePosts : function () {
                 var hasReferenceData = false;
-                var link = DSUtils.get(this, JSONAPIMETATAG + '.relationships.posts.related');
+                var link = DSUtils.get(this, JSONAPIMETATAG + '.relationships.containedposts.related');
 
                 if (this.containedposts) {
                     DSUtils.forEach(this.containedposts, function (item) {
@@ -108,7 +158,7 @@ beforeEach(function () {
                 }
 
                 if (hasReferenceData === true && link) {
-                    return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: true });
+                    return Post.findAll({ containerid: this.Id }, { bypassCache: true, jsonApi: { jsonApiPath: link } });
                 } else {
                     DSUtils.Promise.resolve(this.containedposts);
                 }
@@ -165,7 +215,7 @@ beforeEach(function () {
         .WithData(
             new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
                 .WithLink('self', '/container/1')
-                .WithRelationship('posts', 
+                .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
                         .WithData('posts', '5')
             )

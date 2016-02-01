@@ -1,0 +1,40 @@
+﻿{
+  "data": [
+    {
+      "type": "article",
+      "id": "1",
+      "attributes": {
+        "title": "JSON API paints my bikeshed!"
+      },
+      "relationships": {
+        "author": {
+          "links": {
+            "related": "http://example.com/article/1/author"
+          },
+          "data": {
+            "type": "author",
+            "id": "9"
+          }
+        },
+        "comments": {
+          "links": {
+            "related": "http://example.com/article/1/comment"
+          },
+          "data": [
+            {
+              "type": "comment",
+              "id": "1"
+            },
+            {
+              "type": "comment",
+              "id": "2"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "http://example.com/article/1"
+      }
+    }
+  ]
+}

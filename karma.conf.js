@@ -51,11 +51,17 @@ module.exports = function (config) {
             'node_modules/js-data/dist/js-data.js',
             'node_modules/js-data-http/dist/js-data-http.js',
             'dist/js-data-jsonapi.js',
-            'karma.start.js',
-            'test/**/*.js'
+                        
+            'karma.start.js',              
+            'test/**/*.js',
+            
+            'examples/**/*.js',
+
+            // fixtures
+            { pattern: 'examples/**/*.json', watched: true, served: true, included: false }
         ],
         
-        reporters: ['dots', 'coverage', 'junit'],
+        reporters: ['progress', 'coverage', 'junit'],
         
         preprocessors: {
             //'dist/js-data-jsonapi.js': ['coverage']

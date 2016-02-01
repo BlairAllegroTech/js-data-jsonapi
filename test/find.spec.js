@@ -14,6 +14,7 @@
             _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
         }, 30);
         
+
         return dsHttpAdapter.find(Post, 1).then(function (data) {
             // We are not testing meta data yet
             ignoreMetaData(data);

@@ -104,27 +104,58 @@ export class SerializationOptions {
 
         return null;
     }
-    getChildRelation(relationName: string): JSData.RelationDefinition {
-        let relation = this.getChildRelations(relationName);
+    getChildRelation(relationType: string): JSData.RelationDefinition {
+        let relation = this.getChildRelations(relationType);
         return (relation && relation[0]) ? relation[0] : null;
     }
 
-    private getChildRelations(relationName: string): Array<JSData.RelationDefinition>  {
+    //Find relationship by localField name
+    getChildRelationWilLocalField(relationType: string, localFieldName: string): JSData.RelationDefinition {
+        let relations = this.getChildRelations(relationType);
+
+        var match: JSData.RelationDefinition = null;
+        DSUTILS.forEach(relations, (relation: JSData.RelationDefinition) => {
+            if (relation.localField === localFieldName) {
+                match = relation;
+                return false;
+            }
+        });
+        return match;
+    }
+
+    //Find relationship by foreignKey name
+    getChildRelationWithForeignKey(relationType: string, foreignKeyName: string): JSData.RelationDefinition {
+        let relations = this.getChildRelations(relationType);
+
+        var match: JSData.RelationDefinition = null;
+        DSUTILS.forEach(relations, (relation: JSData.RelationDefinition) => {
+            if (relation.foreignKey === foreignKeyName) {
+                match = relation;
+                return false;
+            }
+        });
+        return match;
+    }
+
+
+
+    //Find relationship by relationship name
+    private getChildRelations(relationType: string): Array<JSData.RelationDefinition>  {
         if (this.resourceDef.relations) {
 
             if (this.resourceDef.relations.hasOne) {
-                if (this.resourceDef.relations.hasOne[relationName]) {
-                    return this.resourceDef.relations.hasOne[relationName];
+                if (this.resourceDef.relations.hasOne[relationType]) {
+                    return this.resourceDef.relations.hasOne[relationType];
                 }
             }
 
             if (this.resourceDef.relations.hasMany) {
-                if (this.resourceDef.relations.hasMany[relationName]) {
-                    return this.resourceDef.relations.hasMany[relationName];
+                if (this.resourceDef.relations.hasMany[relationType]) {
+                    return this.resourceDef.relations.hasMany[relationType];
                 }
             }
 
-            let relationlower = relationName.toLowerCase();
+            let relationlower = relationType.toLowerCase();
             let matchIndex = -1;
             let relationList = this.resourceDef['relationlist'];
             DSUTILS.forEach<JSData.RelationDefinition>(relationList, (relation: JSData.RelationDefinition, index: number) => {
@@ -137,13 +168,68 @@ export class SerializationOptions {
             });
 
             if (matchIndex !== -1) {
-                LogInfo('Relation Case Insensitive match made of ' + relationName, [relationList[matchIndex]]);
+                LogInfo('Relation Case Insensitive match made of ' + relationType, [relationList[matchIndex]]);
                 return relationList[matchIndex];
             }
         }
 
         return null;
     }
+
+    //Find relationship by localField
+    //private getChildRelationWithLocalField(relationType:string, localFieldName: string): JSData.RelationDefinition {
+    //    var match: JSData.RelationDefinition = null;
+
+    //    if (this.resourceDef.relations) {
+    //        if (this.resourceDef.relations.hasOne) {
+    //            for (var resourceType in this.resourceDef.relations.hasOne) {
+    //                if (this.resourceDef.relations.hasOne[resourceType]) {
+    //                    DSUTILS.forEach(this.resourceDef.relations.hasOne[resourceType], (relationDef: JSData.RelationDefinition) => {
+    //                        if (relationDef.localField && relationDef.localField === localFieldName) {
+    //                            match = relationDef;
+    //                            return false;
+    //                        }
+    //                    });
+    //                }
+    //            }
+    //        }
+
+    //        if (!match && this.resourceDef.relations.hasMany) {
+    //            for (var resourceType in this.resourceDef.relations.hasMany) {
+    //                if (this.resourceDef.relations.hasMany[resourceType]) {
+    //                    DSUTILS.forEach(this.resourceDef.relations.hasMany[resourceType], (relationDef: JSData.RelationDefinition) => {
+    //                        if (relationDef.localField && relationDef.localField === localFieldName) {
+    //                            match = relationDef;
+    //                            return false;
+    //                        }
+    //                    });
+    //                }
+    //            }
+    //        }
+
+    //        if (!match) {
+    //            let localFieldNamelower = localFieldName.toLowerCase();
+    //            let relationList = this.resourceDef['relationlist'];
+
+    //            DSUTILS.forEach<JSData.RelationDefinition>(relationList, (relation: JSData.RelationDefinition) => {
+    //                if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
+
+    //                    if (relation.localField && relation.localField === localFieldName) {
+    //                        //if (relationlower === relation.relation) {
+    //                        match = relation;
+    //                        return false;
+    //                    }
+    //                }
+    //            });
+
+    //            if (match) {
+    //                LogInfo('Relation Case Insensitive match made of ' + localFieldName, [match]);
+    //            }
+    //        }
+    //    }
+
+    //    return match;
+    //}
 
     constructor(def: JSData.DSResourceDefinitionConfiguration) {
         this.resourceDef = def;
@@ -365,6 +451,8 @@ export class JsonApiHelper {
                         var dataObject = data[dataType][dataId];
 
                         for (var prop in dataObject) {
+
+                            // hasMany Relationship
                             if (DSUTILS.isArray(dataObject[prop])) {
                                 DSUTILS.forEach(dataObject[prop], (item: ModelPlaceHolder, index: number, source: Array<ModelPlaceHolder>) => {
                                     //If included or data contains the reference we are looking for then use it
@@ -401,8 +489,43 @@ export class JsonApiHelper {
                                         }
                                     }
                                 });
+                            } else {
+                                // hasOne Relationship
+                                if (dataObject[prop].constructor === ModelPlaceHolder) {
+                                    var item: ModelPlaceHolder = dataObject[prop];
+                                    let newItem = included[item.type] ? included[item.type][item.id] : (data[item.type] ? data[item.type][item.id] : null);
+                                    if (newItem) {
+                                        //Included item found!!
+                                        // Apply foreign key to js-data object 
+                                        if (item.foreignKeyName) {
+                                            newItem[item.foreignKeyName] = item.foreignKeyValue;
+                                        }
+
+                                        // Replace item in array with data from included or data, data
+                                        dataObject[prop] = newItem;
+                                    } else {
+                                        // Replace item in array with plain object, but with Primary key or any foreign keys set                                    
+                                        var itemOptions = options.getResource(item.type);
+
+                                        let metaData = new MetaData();
+                                        metaData.isJsonApiReference = true;
+
+                                        let newItem = <any>{};
+                                        newItem[JSONAPI_META] = metaData;
+                                        newItem[itemOptions.idAttribute] = item.id;
+
+                                        // Apply foreign key to js-data object 
+                                        if (item.foreignKeyName) {
+                                            newItem[item.foreignKeyName] = item.foreignKeyValue;
+                                        }
+
+                                        // Replace item in array with data from included or data, data
+                                        dataObject[prop] = newItem;
+                                    }
+                                }
                             }
                         }
+
                         flatternedData.push(dataObject);
                     }
                 }
@@ -576,10 +699,13 @@ export class JsonApiHelper {
         for (var relationName in data.relationships) {
             if (data.relationships[relationName]) {
                 // here js-data relation name <==> js-data relation
+                // This assumption is incorrect.
+                // Relation anme should be the local field name of a relationship.
+
                 var relationship = data.relationships[relationName];
                 if (relationship.data) {
-                    var relationshipDef = options.getChildRelation(relationName);
-
+                    var childRelationType = DSUTILS.isArray(relationship.data) ? relationship.data[0].type : (<JsonApi.JsonApiData>(<any>relationship.data)).type;
+                    var relationshipDef = options.getChildRelationWilLocalField(childRelationType, relationName);
                     if (!relationshipDef) {
                         throw new Error(
                             'MISSING: Relationship definition on js-data resource, Name:' + options.type +
@@ -587,7 +713,8 @@ export class JsonApiHelper {
                             '.Your js-data store configuration does not match your jsonapi data structure');
                     } else {
                         // Add relationship to meta data, so that we can use this to lazy load relationship as requiredin the future
-                        metaData.WithRelationshipLink(relationshipDef.relation, 'related', relationship.FindLinkType('related'));
+                        //metaData.WithRelationshipLink(relationshipDef.relation, 'related', relationship.FindLinkType('related'));
+                        metaData.WithRelationshipLink(relationshipDef.localField, 'related', relationship.FindLinkType('related'));
                     }
 
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"
@@ -649,20 +776,21 @@ export class JsonApiHelper {
                         }
                     } else {
                         // If data is not an array then set a single item.
-                        let data: JsonApi.JsonApiData = (<any>relationship.data);
-                        var id = data.id;
-                        var type = data.type;
+                        let item: JsonApi.JsonApiData = (<any>relationship.data);
+                        var id = item.id;
+                        var type = item.type;
 
                         localKeysList.push(id);
 
                         let relatedItem = new ModelPlaceHolder(type, id);
                         if (relationshipDef.foreignKey) {
                             relatedItem.WithForeignKey(foreignKey, data.id, data.type);
+                            fields[localField] = relatedItem;
                         }
 
                         if (!relationshipDef.foreignKey) {
                             if (relationshipDef.type === jsDataHasOne) {
-                                // Store related local keys for toMany related items relationship
+                                // Store related local keys for toOne related items relationship
                                 fields[localField] = relatedItem;
                             } else {
                                 // Store related local keys for toMany related items relationship
