@@ -1,4 +1,5 @@
-﻿﻿##js-data-jsonapi
+﻿﻿#js-data-jsonapi
+
 ###JsonApi Adapter for [js-data](http://www.js-data.io) 
 This adapter implements the [JsonApi Protocol](http://jsonapi.org/) and ties it to a js-data data store.
 
