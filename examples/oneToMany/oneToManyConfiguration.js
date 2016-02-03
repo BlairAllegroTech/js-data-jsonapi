@@ -50,6 +50,12 @@
                         localField: 'article',
                         localKey: 'articleid'
                     }
+                },
+                hasOne: {
+                    author: {
+                        localField: 'author',
+                        localKey: 'authorid'
+                    }
                 }
             }
         });

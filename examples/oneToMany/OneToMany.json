@@ -11,30 +11,53 @@
           "links": {
             "related": "http://example.com/article/1/author"
           },
-          "data": {
-            "type": "author",
-            "id": "9"
-          }
+          "data": {"type": "author","id": "9"}
         },
         "comments": {
           "links": {
-            "related": "http://example.com/article/1/comment"
+            "related": "http://example.com/article/1/comments"
           },
           "data": [
-            {
-              "type": "comment",
-              "id": "1"
-            },
-            {
-              "type": "comment",
-              "id": "2"
-            }
+            {"type": "comment","id": "1"},
+            {"type": "comment","id": "2"}
           ]
         }
       },
       "links": {
         "self": "http://example.com/article/1"
       }
+    }],
+
+  "included": [
+    {
+    "type": "comment",
+    "id": "1",
+    "attributes": {
+      "body": "First!"
+    },
+    "relationships": {
+      "author": {
+        "data": { "type": "author", "id": "9" }
+      }
+    },
+    "links": {
+      "self": "http://example.com/article/1/comments/1"
     }
+  }, {
+    "type": "comment",
+    "id": "2",
+    "attributes": {
+      "body": "I like Json better"
+    },
+    "relationships": {
+      "author": {
+        "data": { "type": "author", "id": "9" }
+      }
+    },
+    "links": {
+      "self": "http://example.com/article/1/comments/2"
+    }
+  }
   ]
+
 }

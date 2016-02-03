@@ -83,6 +83,10 @@ export class SerializationOptions {
 
     resourceDef: JSData.DSResourceDefinitionConfiguration;
 
+    def(): JSData.DSResourceDefinitionConfiguration {
+        return this.resourceDef;
+    }
+
     getResource(resourceName: string): SerializationOptions {
         var resource = this.resourceDef.getResource(resourceName);
         return resource ? new SerializationOptions(resource) : null;
@@ -337,6 +341,7 @@ export class JsonApiHelper {
         }
         return responseObj;
     }
+
     // Serialize js-data object as JsonApi request
     public static Serialize(options: SerializationOptions, contents: any): JsonApi.JsonApiRequest {
         var result = new JsonApi.JsonApiRequest();
@@ -405,43 +410,39 @@ export class JsonApiHelper {
             }
         }
 
-        //------ Original algorithum ------------
-        // var responseDataArray = new Array();
-        // JSON API Specifies that a single data object be returned as an object where as data from a one to many should always be returned in an array.
-        //if (DSUTILS.isArray(newResponse.data)) {
-        //    DSUTILS.forEach(newResponse.data, (item) => {
-        //        var obj = this.DataToObject(options, newResponse, item, 0);
-        //        responseDataArray.push(obj);
-        //    });
-        //} else {
-        //    var obj = this.DataToObject(options, newResponse, (<any>newResponse.data), 0);
-        //    responseDataArray.push(obj);
-        //}
-        //return new DeSerializeResult(responseDataArray, newResponse);
-        //---------------------------------------
-
-
         //------ New algorithum ------------
         //var data = {};
         //var included = {};
         //[1] Deserialize all data        
         //[2] Deserialize all included data
-        //[3] Iterate over inclued data relationships set ro reference other included data.
+        //[3] Iterate over inclued data relationships set to reference other included data.
         //[4] Iterate over data relationships and set to reference included data if available. 
         var data = {};
         var included = {};
+
+        //Store data in a type,id key pairs
         DSUTILS.forEach(newResponse.data, (item: JsonApi.JsonApiData) => {
             data[item.type] = data[item.type] || {};
             data[item.type][item.id] = this.DeserializeJsonApiData(options, item);
         });
 
+        // Attach liftime events
+        JsonApiHelper.AssignLifeTimeEvents(options.def());
+
+        //Store data included a type,id key pairs
         DSUTILS.forEach(newResponse.included, (item: JsonApi.JsonApiData) => {
+            var includedDef = options.getResource(item.type);
             included[item.type] = included[item.type] || {};
-            included[item.type][item.id] = this.DeserializeJsonApiData(options.getResource(item.type), item);
+            included[item.type][item.id] = this.DeserializeJsonApiData(includedDef, item);
+
+            // Attach liftime events
+            JsonApiHelper.AssignLifeTimeEvents(includedDef.def());
         });
 
+        // This is an array of top level objects with child, object references and included objects
+        var jsDataArray = [];
+
         // Replace data references with included data where available
-        var flatternedData = [];
         for (var dataType in data) {
 
             if (data[dataType]) {
@@ -452,14 +453,15 @@ export class JsonApiHelper {
 
                         for (var prop in dataObject) {
 
-                            // hasMany Relationship
+                            //var itemArray = DSUTILS.isArray(dataObject[prop]) ?  dataObject[prop] : [dataObject[prop]]; 
                             if (DSUTILS.isArray(dataObject[prop])) {
+                                // hasMany Relationship
                                 DSUTILS.forEach(dataObject[prop], (item: ModelPlaceHolder, index: number, source: Array<ModelPlaceHolder>) => {
                                     //If included or data contains the reference we are looking for then use it
                                     let newItem = included[item.type] ? included[item.type][item.id] : (data[item.type] ? data[item.type][item.id] : null);
                                     if (newItem) {
                                         //Included item found!!
-                                        // Apply foreign key to js-data object 
+                                        // Apply foreign key to js-data object
                                         if (item.foreignKeyName) {
                                             newItem[item.foreignKeyName] = item.foreignKeyValue;
                                         }
@@ -486,6 +488,9 @@ export class JsonApiHelper {
 
                                             // Replace item in array with data from included or data, data
                                             source[index] = newItem;
+
+                                            // Attach liftime events
+                                            JsonApiHelper.AssignLifeTimeEvents(itemOptions.def());
                                         }
                                     }
                                 });
@@ -504,7 +509,7 @@ export class JsonApiHelper {
                                         // Replace item in array with data from included or data, data
                                         dataObject[prop] = newItem;
                                     } else {
-                                        // Replace item in array with plain object, but with Primary key or any foreign keys set                                    
+                                        // Replace item in array with plain object, but with Primary key or any foreign keys set
                                         var itemOptions = options.getResource(item.type);
 
                                         let metaData = new MetaData();
@@ -521,17 +526,20 @@ export class JsonApiHelper {
 
                                         // Replace item in array with data from included or data, data
                                         dataObject[prop] = newItem;
+
+                                        // Attach liftime events
+                                        JsonApiHelper.AssignLifeTimeEvents(itemOptions.def());
                                     }
                                 }
                             }
                         }
 
-                        flatternedData.push(dataObject);
+                        jsDataArray.push(dataObject);
                     }
                 }
             }
         }
-        return new DeSerializeResult(flatternedData, newResponse);
+        return new DeSerializeResult(jsDataArray, newResponse);
     }
 
 
@@ -668,31 +676,40 @@ export class JsonApiHelper {
         // If the object has any belongs to relations extract parent id and set on object
         metaData.WithRelationshipLink(JSONAPI_PARENT_LINK, JSONAPI_PARENT_LINK, JsonApiHelper.setParentIds(options, data, fields));
 
-        options.resourceDef.beforeInject = (resource: JSData.DSResourceDefinition<any>, dataList: any): void => {
-            // Merge a json api reference with a fully populated resource that has been previously retrieved
-            if (DSUTILS.isArray(dataList)) {
-                DSUTILS.forEach<any>(dataList, (data: any) => {
-                    var res = resource.get(data[resource.idAttribute]);
-                    if (res) {
-                        // This is an update the resource should always exist!!
-                        this.MergeMetaData(data, res);
-                        LogInfo('beforeInject called onresource:', [resource.name]);
-                    }
-                });
-            }
-        };
+        //options.resourceDef.beforeInject = (resource: JSData.DSResourceDefinition<any>, dataList: any): void => {
+        //    // Merge a json api reference with a fully populated resource that has been previously retrieved
+        //    if (DSUTILS.isArray(dataList)) {
+        //        DSUTILS.forEach<any>(dataList, (data: any) => {
+        //            var res = resource.get(data[resource.idAttribute]);
+        //            if (res) {
+        //                // This is an update the resource should always exist!!
+        //                this.MergeMetaData(data, res);
+        //                LogInfo('beforeInject called onresource:', [resource.name]);
+        //            }
 
-        options.resourceDef.beforeUpdate = (resource: JSData.DSResourceDefinition<any>, data: any, cb: (err: Error, data: any) => void): void => {
-            // Merge a json api reference with a fully populated resource that has been previously retrieved
-            var res = resource.get(data[resource.idAttribute]);
-            if (res) {
-                // This is an update the resource should always exist!!
-                this.MergeMetaData(data, res);
-            }
+        //            var descriptor: any = {
+        //                get: function ()  {
+        //                    var meta = MetaData.TryGetMetaData(this);
+        //                    return meta.isJsonApiReference;
+        //                },
+        //                enumerable: true
+        //            };
+        //            Object.defineProperty(data, 'IsJsonApiReference', descriptor);
+        //        });
+        //    }
+        //};
 
-            LogInfo('beforeUpdate called onresource:', [resource.name]);
-            cb(null, data);
-        };
+        //options.resourceDef.beforeUpdate = (resource: JSData.DSResourceDefinition<any>, data: any, cb: (err: Error, data: any) => void): void => {
+        //    // Merge a json api reference with a fully populated resource that has been previously retrieved
+        //    var res = resource.get(data[resource.idAttribute]);
+        //    if (res) {
+        //        // This is an update the resource should always exist!!
+        //        this.MergeMetaData(data, res);
+        //    }
+
+        //    LogInfo('beforeUpdate called onresource:', [resource.name]);
+        //    cb(null, data);
+        //};
 
 
         //Get each child relationship
@@ -872,6 +889,47 @@ export class JsonApiHelper {
         }
     }
 
+
+    private static beforeInjectJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any): void {
+        // Merge a json api reference with a fully populated resource that has been previously retrieved
+        var dataList = DSUTILS.isArray(items) ? items : [items];
+
+        DSUTILS.forEach<any>(dataList, (data: any) => {
+            // This is an update the resource should always exist!!
+            JsonApiHelper.MergeMetaData(data, resource);
+
+            var descriptor: any = {
+                get: function () {
+                    var meta = MetaData.TryGetMetaData(this);
+                    return meta.isJsonApiReference;
+                },
+                enumerable: true
+            };
+            Object.defineProperty(data, 'IsJsonApiReference', descriptor);
+
+            LogInfo('beforeInject called onresource:', [resource.name]);
+        });
+    };
+
+
+    private static beforeUpdateJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any, cb: (err: Error, data: any) => void): void  {
+        var dataList = DSUTILS.isArray(items) ? items : [items];
+        DSUTILS.forEach<any>(dataList, (data: any) => {
+            // Merge a json api reference with a fully populated resource that has been previously retrieved
+
+            // This is an update the resource should always exist!!
+            JsonApiHelper.MergeMetaData(data, resource);
+
+            LogInfo('beforeUpdate called onresource:', [resource.name]);
+        });
+
+        cb(null, items);
+    };
+
+    public static AssignLifeTimeEvents(resource: JSData.DSResourceDefinitionConfiguration) {
+        resource.beforeInject = JsonApiHelper.beforeInjectJsonApiData;
+        resource.beforeUpdate = JsonApiHelper.beforeUpdateJsonApiData;
+    }
     /* Expreimental !!
     // This is where the magic of relations happens.
     applyRelationLoadersToTarget(store: JSData.DS, definition: JSData.DSResourceDefinition<any>, target: Object): void {

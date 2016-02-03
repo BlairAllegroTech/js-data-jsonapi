@@ -1,5 +1,6 @@
 ﻿// Setup global test variables
 var JSData, DSUtils;
+var realXMLHttpRequest;
 
 var dsHttpAdapter, UserContainer, User, Post, datastore, queryTransform;
 var p1, p11;
@@ -20,9 +21,13 @@ var fail = function (msg) {
 
 function loadJSON(file) {
     
+    
     return new DSUtils.Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest();
+        
+        var xhr = new realXMLHttpRequest();
+
         xhr.open('GET', file);
+        xhr.timeout = 500;
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(xhr.response);
@@ -102,17 +107,7 @@ before(function () {
     
     DSUtils = JSData.DSUtils;
     
-    
-    //Load examples
-    examples.oneToMany = {
-        config: {}, 
-        json: {}
-    };
-    
-    return loadJSON('/base/examples/oneToMany/OneToMany.json').then(function (json) {
-        examples.oneToMany.json = json;
-    });
-           
+    realXMLHttpRequest = XMLHttpRequest;             
 });
 
 // Setup before each test
