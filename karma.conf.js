@@ -1,5 +1,7 @@
 ﻿// Install, .npm install
-// Visual studio build, .npm run build 
+// Visual studio build, .npm run build
+// Test: npm run test 
+// Karma: npm run karma
 // To connect browser:  http://localhost:9876
 var customLaunchers = {
     bs_ie9_windows7: {

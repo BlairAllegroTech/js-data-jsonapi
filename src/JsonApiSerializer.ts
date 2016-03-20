@@ -13,33 +13,53 @@ import JsonApi = require('./JsonApi');
 const JSONAPI_META: string = '$_JSONAPIMETA_';
 const JSONAPI_PARENT_LINK: string = 'parent';
 const jsonApiContentType: string = 'application/vnd.api+json';
+const JSONAPI_Related: string = 'related';
 
-const jsDataBelongsTo : string = 'belongsTo';
+//const jsDataBelongsTo : string = 'belongsTo';
 const jsDataHasMany: string = 'hasMany';
 const jsDataHasOne: string = 'hasOne';
 
+
+
 let DSUTILS: JSData.DSUtil = JSDataLib['DSUtils'];
 
+class MetaLinkDataImp implements JsonApiAdapter.MetaLinkData {
+    type: string;
+    url: string;
+    constructor(type: string, url: string) {
+        this.type = type;
+        this.url = url;
+    }
+}
+
+
+
 export class MetaData implements JsonApiAdapter.JsonApiMetaData {
+    selfType: string;
     selfLink: string;
     isJsonApiReference: boolean;
-    relationships: { [relation: string]: Object };
+    relationships: { [relation: string]: JsonApiAdapter.MetaLink };
 
-    constructor() {
+    constructor(type: string) {
+        this.selfType = type;
         this.selfLink = null;
         this.isJsonApiReference = true;
         this.relationships = {};
     }
 
-    WithRelationshipLink(relationName: string, linkType: string, url: string): MetaData {
+    WithRelationshipLink(relationName: string, linkType: string, dataType: string, url: string): MetaData {
         this.relationships[relationName] = this.relationships[relationName] || {};
-        this.relationships[relationName][linkType] = url;
+        this.relationships[relationName][linkType] = new MetaLinkDataImp(dataType, url);
         return this;
     }
 
-    relatedLink(relationName: string): string {
+    relatedLink(relationName: string): JsonApiAdapter.MetaLinkData {
+        return this.getRelationshipLink(relationName, JSONAPI_Related);
+    }
+
+    private getRelationshipLink(relationName: string, linkType: string): JsonApiAdapter.MetaLinkData {
         if (this.relationships[relationName]) {
-            return this.relationships[relationName]['related'];
+            return this.relationships[relationName][linkType];
         } else {
             return undefined;
         }
@@ -81,7 +101,7 @@ export class SerializationOptions {
     get idAttribute(): string { return this.resourceDef.idAttribute; };
     relationType(): string { return this.resourceDef['type']; };
 
-    resourceDef: JSData.DSResourceDefinitionConfiguration;
+    private resourceDef: JSData.DSResourceDefinitionConfiguration;
 
     def(): JSData.DSResourceDefinitionConfiguration {
         return this.resourceDef;
@@ -108,12 +128,24 @@ export class SerializationOptions {
 
         return null;
     }
+
+    /**
+     * @name getChildRelation
+     * @desc Get the child relationship for a resorce of a given type defined by relationType, 
+     *  NOTE: can return more than one relationship if more than one exists of thhe given tye
+     * @param relationType The relationship type to find
+     */
     getChildRelation(relationType: string): JSData.RelationDefinition {
         let relation = this.getChildRelations(relationType);
         return (relation && relation[0]) ? relation[0] : null;
     }
 
-    //Find relationship by localField name
+     /**
+     * @name getChildRelationWilLocalField
+     * @desc Given the relationType, find relationship by localFielName name
+     * @param relationType The type the relationship represents
+     * @param localFieldName The local field name for the relationship, incase there is more than one relationship on the object of the given type
+        */
     getChildRelationWilLocalField(relationType: string, localFieldName: string): JSData.RelationDefinition {
         let relations = this.getChildRelations(relationType);
 
@@ -127,7 +159,12 @@ export class SerializationOptions {
         return match;
     }
 
-    //Find relationship by foreignKey name
+    /**
+     * @name getChildRelationWithForeignKey
+     * @desc Given the relationType, find relationship by foreignKey name
+     * @param relationType The type the relationship represents
+     * @param foreignKeyName Theforeign key name for the relationship, incase there is more than one relationship on the object of the given type
+     */
     getChildRelationWithForeignKey(relationType: string, foreignKeyName: string): JSData.RelationDefinition {
         let relations = this.getChildRelations(relationType);
 
@@ -279,17 +316,22 @@ export class JsonApiHelper {
                 // if they are either both fully loaded or both not fully loaded then continue with current data
 
             } else {
-                // This SHOULD alsways be set but just in case will be extra cautious!!
-                data[JSONAPI_META] = data[JSONAPI_META] || new MetaData();
+                var dataMeta = MetaData.TryGetMetaData(data);
+                if (!dataMeta) {
+                    throw new Error('MergeMetaData failed, target object missing meta data');
+                } else {
+                    // This SHOULD alsways be set but just in case will be extra cautious!!
+                    //data[JSONAPI_META] = data[JSONAPI_META] || new MetaData();
 
-                // If resource is already fully loaded then do not reset flag!!
-                (<MetaData>data[JSONAPI_META]).isJsonApiReference = (resourceFullyLoaded || dataFullyLoaded);
+                    // If resource is already fully loaded then do not reset flag!!
+                    dataMeta.isJsonApiReference = (resourceFullyLoaded || dataFullyLoaded);
 
-                // see: http://www.js-data.io/docs/dsdefaults#onconflict, onConflict default value is merge
-                // NOT sure if this is necessary. Not sure if jsdata updates be merging e.g. doing this or by replacing?
-                //if (resourceFullyLoaded === true && dataFullyLoaded == false) {
-                //    DSUTILS.deepMixIn(data, res);
-                //}                
+                    // see: http://www.js-data.io/docs/dsdefaults#onconflict, onConflict default value is merge
+                    // NOT sure if this is necessary. Not sure if jsdata updates be merging e.g. doing this or by replacing?
+                    //if (resourceFullyLoaded === true && dataFullyLoaded == false) {
+                    //    DSUTILS.deepMixIn(data, res);
+                    //}                
+                }
             }
         }
     }
@@ -474,7 +516,7 @@ export class JsonApiHelper {
                                             // Replace item in array with plain object, but with Primary key or any foreign keys set                                    
                                             var itemOptions = options.getResource(item.type);
 
-                                            let metaData = new MetaData();
+                                            let metaData = new MetaData(item.type);
                                             metaData.isJsonApiReference = true;
 
                                             let newItem = <any>{};
@@ -512,7 +554,7 @@ export class JsonApiHelper {
                                         // Replace item in array with plain object, but with Primary key or any foreign keys set
                                         var itemOptions = options.getResource(item.type);
 
-                                        let metaData = new MetaData();
+                                        let metaData = new MetaData(item.type);
                                         metaData.isJsonApiReference = true;
 
                                         let newItem = <any>{};
@@ -655,7 +697,7 @@ export class JsonApiHelper {
         // We start off by taking all jsonapi attributes
         var fields = DSUTILS.copy(data.attributes || {});
 
-        var metaData = new MetaData();
+        var metaData = new MetaData(data.type);
         metaData.isJsonApiReference = false;
         metaData.selfLink = data.GetSelfLink();
 
@@ -674,7 +716,7 @@ export class JsonApiHelper {
         }
 
         // If the object has any belongs to relations extract parent id and set on object
-        metaData.WithRelationshipLink(JSONAPI_PARENT_LINK, JSONAPI_PARENT_LINK, JsonApiHelper.setParentIds(options, data, fields));
+        metaData.WithRelationshipLink(JSONAPI_PARENT_LINK, JSONAPI_PARENT_LINK, data.type, JsonApiHelper.setParentIds(options, data, fields));
 
         //options.resourceDef.beforeInject = (resource: JSData.DSResourceDefinition<any>, dataList: any): void => {
         //    // Merge a json api reference with a fully populated resource that has been previously retrieved
@@ -730,15 +772,15 @@ export class JsonApiHelper {
                             '.Your js-data store configuration does not match your jsonapi data structure');
                     } else {
                         // Add relationship to meta data, so that we can use this to lazy load relationship as requiredin the future
-                        //metaData.WithRelationshipLink(relationshipDef.relation, 'related', relationship.FindLinkType('related'));
-                        metaData.WithRelationshipLink(relationshipDef.localField, 'related', relationship.FindLinkType('related'));
+                        //metaData.WithRelationshipLink(relationshipDef.relation, 'related', relationship.FindLinkType('related'));                        
+                        metaData.WithRelationshipLink(relationshipDef.localField, JSONAPI_Related, relationshipDef.relation, relationship.FindLinkType(JSONAPI_Related));
                     }
 
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"
                     // hasOne uses "localField" and "localKey" or "foreignKey"
                     var localField = relationshipDef.localField;
-                    var localKeys = relationshipDef.localKeys;
-                    var localKey = relationshipDef.localKey;
+                    //var localKeys = relationshipDef.localKeys;
+                    //var localKey = relationshipDef.localKey;
                     var relationType = relationshipDef.type; //hasOne or hasMany
                     var foreignKey = relationshipDef.foreignKey;
 
@@ -899,13 +941,73 @@ export class JsonApiHelper {
             JsonApiHelper.MergeMetaData(data, resource);
 
             var descriptor: any = {
+                enumerable: true,
+                writeable: false,
                 get: function () {
                     var meta = MetaData.TryGetMetaData(this);
                     return meta.isJsonApiReference;
-                },
-                enumerable: true
+                }
             };
             Object.defineProperty(data, 'IsJsonApiReference', descriptor);
+
+            // -- findRelated ---------------------------            
+            var findRelatedFunction = function (relationName: string) {
+                var containsReferences = false;
+                var meta = MetaData.TryGetMetaData(this);
+
+                if (meta && meta.isJsonApiReference === false) {
+
+                    if (this[relationName]) {
+                        DSUTILS.forEach(this[relationName], function (item: Object) {
+                            var relationItemMeta = MetaData.TryGetMetaData(item);
+                            if (relationItemMeta.isJsonApiReference === true) {
+                                containsReferences = true;
+                                // Exit the for loop early
+                                return false;
+                            }
+                        });
+                    } else {
+                        throw new Error('findRelated failed, Relationship name:' + relationName + ' does not exist.');
+                    }
+
+                    if (containsReferences === true || this[relationName] === undefined) {
+                        // Get related link for relationship
+                        var relationshipMeta = meta.relatedLink(relationName);
+
+                        if (relationshipMeta) {
+                            var parentResourceType = new SerializationOptions(resource);
+                            var relation = parentResourceType.getChildRelationWilLocalField(relationshipMeta.type, relationName);
+                            var childResource = parentResourceType.getResource(relation.relation);
+                            var config = {};
+                            config[relation.foreignKey] = this.Id;
+
+                            //{ containerid: this.Id }
+                            var operationConfig: JSDataLib.DSAdapterOperationConfiguration = { bypassCache: true };
+                            config['jsonApi'] = { jsonApiPath: relationshipMeta.url };
+                            return (<JSData.DSResourceDefinition<any>>childResource.def()).findAll(config, operationConfig);
+                        }
+                    } else {
+                        // Resolve promise synchronously!!
+                        return DSUTILS.Promise.resolve(this[relationName]);
+                    }
+                } else {
+                    // This is it self a model reference and so we should get the self link first.
+                    // NOTE : We could load self link and then relationship transparently but not sure that this would be what a developer would want.
+                    // probably still better to jut throw an error for now!
+                    throw Error('findRelated failed, this is a mode reference load via self link instead.');
+                }
+            };
+
+            data['findRelated'] = findRelatedFunction;
+
+            //var findRelatedDescriptor: any = {
+            //    enumerable: false,
+            //    writeable: false,
+            //    get: findRelatedFunction
+            //};
+
+            //Object.defineProperty(data, 'findRelated', findRelatedDescriptor);
+
 
             LogInfo('beforeInject called onresource:', [resource.name]);
         });

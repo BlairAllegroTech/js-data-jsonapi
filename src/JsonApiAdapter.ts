@@ -12,13 +12,13 @@ import JSDataHttp = require('js-data-http');
 import Helper = require('./JsonApiSerializer');
 export import JsonApi = require('./JsonApi');
 
-class Headers {
-    common: { [name: string]: string };
+//class Headers {
+//    common: { [name: string]: string };
 
-    constructor() {
-        this.common = {};
-    }
-}
+//    constructor() {
+//        this.common = {};
+//    }
+//}
 
 const HttpNoContent: Number = 204;
 
@@ -163,6 +163,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
 
                 // The local key of the child <==> the foreign key of the parent
                 let foreignKeyName = (<any>resourceConfig).parentKey;
+
                 if (parentResourceName && foreignKeyName && (<any>options).params && ((<any>options).params)[foreignKeyName]) {
                     let pk = ((<any>options).params)[foreignKeyName];
                     let parentRes: JSData.DSResourceDefinition<any> = (<any>resourceConfig.getResource(parentResourceName));
@@ -175,10 +176,10 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                     if (parentItem) {
                         var metaData = Helper.MetaData.TryGetMetaData(parentItem);
                         if (metaData) {
-                            var relationLink = this.DSUtils.get<string>(metaData, ['relationships', parentChildRelation.localField, 'related'].join('.')); //resourceConfig.name,
+                            var relationLink = metaData.relatedLink(parentChildRelation.localField); //resourceConfig.name,
                             if (relationLink) {
                                 (<any>options).params = {};
-                                jsonApiPath = relationLink;
+                                jsonApiPath = relationLink.url;
                             }
                         }
                     }

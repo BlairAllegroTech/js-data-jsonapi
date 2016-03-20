@@ -173,7 +173,7 @@ export class JsonApiError {
     code: number;
     title: string;
     detail: string;
-    source: Source;
+    //source: Source;
 
     AddLink(linkType: string, link: MetaLink): JsonApiError {
         this.links[linkType] = link;
@@ -181,10 +181,10 @@ export class JsonApiError {
     }
 }
 
-class Source {
-    pointer: string;
-    parameterDecorator: string;
-}
+//class Source {
+//    pointer: string;
+//    parameterDecorator: string;
+//}
 
 export class JsonApiVersion {
     version: string;

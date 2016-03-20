@@ -52,7 +52,7 @@
 
             var parent = data[0];
             var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
-            assert.equal(link, 'http://xxx/container/1/posts')
+            assert.equal(link.url, 'http://xxx/container/1/posts')
 
             // I believe the line below and the subsequent call to Post.findAll are equivelent
             // However the call below to "loadRelations" is more meaning full in terms of what we are trying to do.
@@ -154,11 +154,11 @@
 
             var parent = data[0];
             var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
-            assert.equal(link, 'http://xxx/container/1/posts')
+            assert.equal(link.url, 'http://xxx/container/1/posts')
 
             // This call has the same effect as the above to load related data
             //parent.loadPosts().then(function (data) {
-            return Post.findAll({ containerid: parent.Id }, { bypassCache: true, jsonApi: { jsonApiPath: link }}).then(function (data) {
+            return Post.findAll({ containerid: parent.Id }, { bypassCache: true, jsonApi: { jsonApiPath: link.url }}).then(function (data) {
                 assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called 3 times');
 
                 assert.isDefined(UserContainer.get(1), 'Container 1 exists');
@@ -232,11 +232,12 @@
             var parent = data[0];
             
             var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
-            assert.equal(link, 'http://xxx/container/1/posts')
+            assert.equal(link.url, 'http://xxx/container/1/posts')
             
             // This call has the same effect as the above to load related data
             //return Post.findAll({ containerid: this.Id, urlPath: link, bypassCache: true })
-            return  parent.findRelatePosts().then(function (data) {
+            //return  parent.findRelatePosts().then(function (data) {
+            return parent.findRelated('containedposts').then(function (data) {
                 assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called 3 times');
 
                 assert.isDefined(UserContainer.get(1), 'Container 1 exists');

@@ -23,9 +23,19 @@ declare module JsonApiAdapter {
         //PUT(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType>;
     }
 
+    export interface MetaLinkData {
+        type: string;
+        url: string;
+    }
+
+    export interface MetaLink {
+        [relatioType: string]: MetaLinkData;
+    }
+
     export interface JsonApiMetaData {
         isJsonApiReference: boolean;
         selfLink: string;
-        relationships: { [relation: string]: Object };
+        relationships: { [relation: string]: MetaLink };
+        relatedLink(relationName: string): JsonApiAdapter.MetaLinkData;
     }
 }

@@ -14,15 +14,13 @@
     
 
     describe('oneToMany Example', function () {
-        
-        
+                
         // Load onetomany example
         beforeEach(function () {
             
             // Configure
             example.config = examples.oneToMany.config(ds);
-            
-            
+                        
             return loadJSON('/base/examples/oneToMany/oneToMany.json').then(function (json) {
                 example.json = json;                
             });
@@ -35,7 +33,7 @@
             setTimeout(function () {
                 assert.equal(1, _this.requests.length);
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, example.json);
+                _this.requests[_this.requests.length-1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, example.json);
             }, 30);
             
             return example.config.article.find(1).then(function (data) {
@@ -50,10 +48,11 @@
                 var comment2 = example.config.comment.get(2);
 
 
-                assert.equal(false, article.IsJsonApiReference, 'Expect article to be fully populated');
-                assert.equal(true, author.IsJsonApiReference, 'Expect author to be a refrence object only');
+                assert.equal(false, article.IsJsonApiReference, 'Expect article to be fully populated');                
                 assert.equal(false, comment1.IsJsonApiReference, 'Expect comment#1 to be fully populated');
                 assert.equal(false, comment2.IsJsonApiReference, 'Expect comment#2 to be fully populated');
+
+                assert.equal(true, author.IsJsonApiReference, 'Expect author to be a refrence object only');
             });
 
         });
