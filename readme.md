@@ -26,11 +26,8 @@ See the [Project Wiki](https://github.com/BlairAllegroTech/js-data-jsonapi/wiki)
 1. Testing is by no means complete, there are many more scenarios that need to be covered off.
 1. None of the xxxxAll adapter methods have been tested yet. e.g  findAll, destroyAll, updateAll
 1. Bower package has not been tested
-1. The code creates the DSHttpDataAdapter internally, however i believe for example that there is an angular specific version. The HttpAdapter may not be created correctly using this package.
+1. The code creates the DSHttpDataAdapter internally
 - Allow the adapter to be injected or a constructor function passed via constructor options.
-1. Code has been developed using typescript, the generated java-script code DOES NOT pass jslint.
-- Could add typescript linting or port to compliant js by had.But i prefer to work in typescript as i am not a pro javascript developer and typescript checks lets you know when you make mistakes!!
-- tslint using microsoft recommended rules still some outstanding lint issues
 1. Code is some what brittle in terms of requiring your js-data configuration to match very closely your jsonApi
 - Could look at adding additional configuration to allow flexible mapping between js-data and jsonapi
 - Further documentation required illustrating the relationships between JsonApi data structure and js-data configuration
