@@ -17,9 +17,9 @@ See the [Project Wiki](https://github.com/BlairAllegroTech/js-data-jsonapi/wiki)
 |When deserializing JsonApi data add 'ParentIds' so that js-data **belongsTo** relationships can work|code complete, some tests|
 |When deserializing JsonApi data add **'LocalKey/LocalKeys'** or **'ForeignKeys'** depending on js-data configurations so that js-data **hasOne** and **hasMany** relationships can work|code complete, some tests|
 |Add metadata to indicate if an object is a jsonApi reference, indicating that it is partially populated only|code complete, some tests|
-|Transparently request full objects when requested from js-data cache and object is a jsonApi reference only, e.g. Not fully populated| Started|
-|Store hyperlinking data within metadata of stored data|Started|
-|Use metadata hyperlinks to request related data from JsonApi data store|Started|
+|Transparently request full objects when requested from js-data cache and object is a jsonApi reference only, e.g. Not fully populated| code complete, some tests|
+|Store hyperlinking data within metadata of stored data|code complete, some tests|
+|Use metadata hyperlinks to request related data from JsonApi data store|code complete, some tests|
 |Use metadata hyperlinks to add new items to relationships|Not started|
 
 ### Known Issues

@@ -160,41 +160,43 @@ beforeEach(function () {
             },
 
 
-            //Experimental mechanisum for loading  jsonApi related/relationships data
-            __findRelated : function (relationName) {
-                var hasReferenceData = false;
+            // Experimental mechanisum for loading  jsonApi related/relationships data
+            // This is now built into data objects
+
+            //__findRelated : function (relationName) {
+            //    var hasReferenceData = false;
                 
-                if (DSUtils.get(item, JSONAPIMETATAG + '.isJsonApiReference') === false) {                    
+            //    if (DSUtils.get(item, JSONAPIMETATAG + '.isJsonApiReference') === false) {                    
                     
-                    if (this[relationName]) {
-                        DSUtils.forEach(this[relationName], function (item) {
-                            if (DSUtils.get(item, JSONAPIMETATAG + '.isJsonApiReference')) {
-                                hasReferenceData = true;
-                                // Exit the for loop early
-                                return false;
-                            }
-                        });
-                    } else {
-                        throw new Error('findRelated failed, Relationship name:' + relationName + ' does not exist.')
-                    }
+            //        if (this[relationName]) {
+            //            DSUtils.forEach(this[relationName], function (item) {
+            //                if (DSUtils.get(item, JSONAPIMETATAG + '.isJsonApiReference')) {
+            //                    hasReferenceData = true;
+            //                    // Exit the for loop early
+            //                    return false;
+            //                }
+            //            });
+            //        } else {
+            //            throw new Error('findRelated failed, Relationship name:' + relationName + ' does not exist.')
+            //        }
                     
-                    if (hasReferenceData === true || this[relationName] == undefined) {
-                        // Get relted link for relationship
-                        var relationshipUrl = DSUtils.get(this, [JSONAPIMETATAG, 'relationships', relationName, 'related'].join('.'));
+            //        if (hasReferenceData === true || this[relationName] == undefined) {
+            //            // Get relted link for relationship
+            //            var relationshipUrl = DSUtils.get(this, [JSONAPIMETATAG, 'relationships', relationName, 'related'].join('.'));
                         
-                        if (relationshipUrl) {
-                            return Post.findAll({ containerid: this.Id }, { bypassCache: true, jsonApi: { jsonApiPath: relationshipUrl } });
-                        }
-                    }
+            //            if (relationshipUrl) {
+            //                return Post.findAll({ containerid: this.Id }, { bypassCache: true, jsonApi: { jsonApiPath: relationshipUrl } });
+            //            }
+            //        }
                     
-                    return DSUtils.Promise.resolve(this[relationName]);                
-                } else {
-                    // This is it self a model reference and so we should get the self link first.
-                    // NOTE : We could load self link and then relationship transparently but not sure that this would be what a developer would want.
-                    // probably still better to jut throw an error for now!
-                    throw Error("findRelated failed, this is a mode reference load via self link instead.")
-                }
-            }
+            //        return DSUtils.Promise.resolve(this[relationName]);                
+            //    } else {
+            //        // This is it self a model reference and so we should get the self link first.
+            //        // NOTE : We could load self link and then relationship transparently but not sure that this would be what a developer would want.
+            //        // probably still better to jut throw an error for now!
+            //        throw Error("findRelated failed, this is a mode reference load via self link instead.")
+            //    }
+            //}
         }
     });
 
