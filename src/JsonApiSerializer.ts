@@ -625,11 +625,12 @@ export class JsonApiHelper {
         }
 
         var data = new JsonApi.JsonApiData(
-            (contents[options.idAttribute] || '').toString(), //JsonApi id is always a string
+            (contents[options.idAttribute] || '').toString(), //JsonApi id is always a string,it can be empty for a new unstored object!
             options.type);
 
         for (var prop in contents) {
-            if (prop === options.idAttribute || prop === 'type' || prop === 'Type') {
+            // Skip id attribute as it has already been copied to the id field out side of the attributes collection
+            if (prop === options.idAttribute) {
                 continue;
             }
 
@@ -644,7 +645,7 @@ export class JsonApiHelper {
 
                         var relationType = childRelation.type || 'MissingRelationType';
                         if (relationType !== jsDataHasMany) {
-                            throw new Error('Data aray encountered, expected this to be a to have a hasMany relationship defined in JSData but found, ' + relationType);
+                            throw new Error('Data array encountered, expected this to be a to have a hasMany relationship defined in JSData but found, ' + relationType);
                         }
 
                         var resourceDef = options.getResource(childRelation.relation);

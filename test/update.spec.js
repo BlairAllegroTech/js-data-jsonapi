@@ -52,13 +52,13 @@
             assert.equal(_this.requests[0].method, 'PUT');
             assert.isDefined(_this.requests[0].requestHeaders);
             assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-            assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 }, links: {}, relationships: {} } }));
+            assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type:'person' }, links: {}, relationships: {} } }));
             
             p1.model[0].Id = '1';
             _this.requests[0].respond(204);//{ 'Content-Type': 'application/vnd.api+json' }
         }, 30);
         
-        return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }).then(function (data) {
+        return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30, type:'person' }).then(function (data) {
             // We are not testing meta data yet
             ignoreMetaData(data);
 
