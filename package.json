@@ -1,6 +1,6 @@
 {
   "name": "js-data-jsonapi",
-  "version": "0.0.0-alpha.2",
+  "version": "0.0.0-alpha.3",
   "description": "JsonApi adapter for js-data.",
   "main": "./dist/js-data-jsonapi.js",
   "repository": {
@@ -50,8 +50,8 @@
     "mout": "0.11.1"
   },
   "peerDependencies": {
-    "js-data": "^2.8.2",
-    "js-data-http": "^2.1.2"
+    "js-data": "^2.8.2 <3",
+    "js-data-http": "^2.1.2 <3"
   },
   "devDependencies": {
     "chai": "3.4.1",

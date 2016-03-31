@@ -34,6 +34,7 @@
 #*.modelproj merge=binary
 #*.sqlproj   merge=binary
 #*.wwaproj   merge=binary
+#*.njsproj   merge=binary
 
 ###############################################################################
 # behavior for image files

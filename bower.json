@@ -7,9 +7,7 @@
     "url": "https://github.com/blairallegrotech/js-data-jsonapi.git"
   },
   "author": {
-    "name": "Blair Jacobs",
-    "url": "http://blog.allegrotech.co.nz/",
-    "email": "blairj@xtra.co.nz"
+    "name": "Blair Jacobs"    
   },
   "main": "./dist/js-data-jsonapi.js",
   "ignore": [
@@ -24,7 +22,12 @@
     "Gruntfile.js",
     "node_modules/",
     "test/",
+    "obj/",
+    "ts-build/",
+    "examples/",
     "package.json",
+    "tsconfig.json",
+    "tslint.json",
     "karma.conf.js",
     "karma.start.js"
   ],

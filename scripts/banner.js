@@ -3,8 +3,8 @@ var pkg = require('../package.json');
 
 var banner = '/*!\n' +
   '* js-data-jsonapi\n' +
-  '* @version ' + pkg.version + ' - Homepage <https://github.com/BlairAllegroTech/js-data-jsonapi>\n' +
-  '* @author Blair Jacobs <blair.jacobs@gmail.com>\n' +
+  '* @version ' + pkg.version + ' - Homepage <https://github.com/BlairAllegroTech/js-data-jsonapi>\n' + 
+  '* @author Blair Jacobs\n' +
   '* @copyright (c) 2016-2017 Blair Jacobs\n' +
   '* @license MIT <https://github.com/BlairAllegroTech/js-data-jsonapi/blob/master/LICENSE>\n' +
   '*\n' +

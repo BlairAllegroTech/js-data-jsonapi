@@ -6,6 +6,7 @@ lib-cov
 *.out
 *.pid
 *.gz
+*.njsproj
 
 pids
 logs
@@ -27,6 +28,8 @@ CONTRIBUTING.md
 favicon.ico
 circle.yml
 bower.json
+tsconfig.json
+tslint.json
 .bowerrc
 Gruntfile.js
 *.start.js
@@ -34,3 +37,6 @@ karma.conf.js
 test/
 lib/
 src/
+examples/
+obj/
+ts-build/
