@@ -6,6 +6,9 @@ lib-cov
 *.out
 *.pid
 *.gz
+*.tgz
+
+*.sln
 *.njsproj
 
 pids
@@ -37,6 +40,8 @@ karma.conf.js
 test/
 lib/
 src/
+scripts/
 examples/
 obj/
-ts-build/
+ts-built/
+.vs/
