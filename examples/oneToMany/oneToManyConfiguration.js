@@ -2,7 +2,9 @@
     examples = examples || {};                
     examples.oneToMany = examples.oneToMany || {};
     
-
+    // Here:
+    // Article (1) <--> (1) Author
+    // Article (1) <--> (*) Comment
     examples.oneToMany.config = function (ds) {
 
         var Article = ds.defineResource({
@@ -10,6 +12,7 @@
             idAttribute: 'id',
             relations: {
                 // hasMany uses "localField" and "localKeys" or "foreignKey"
+                // In the case of one to many we use foreignKey
                 hasOne: {
                     author: {
                         localField: 'author',
@@ -30,7 +33,7 @@
             name: 'author',
             idAttribute: 'id',
             relations: {
-                // hasMany uses "localField" and "localKeys" or "foreignKey"
+                // hasMany uses "localField" and "localKeys" or "foreignKey"                
                 belongsTo: {
                     article: {
                         localField: 'article',

@@ -38,6 +38,7 @@
     <Content Include=".npmignore" />
     <Content Include="bower.json" />
     <Content Include="circle.yml" />
+    <Content Include="examples\manyToMany\manyToMany.json" />
     <Content Include="examples\oneToMany\oneToMany.json" />
     <Content Include="examples\oneToMany\oneToMany.png" />
     <Content Include="LICENSE" />
@@ -59,6 +60,7 @@
   <ItemGroup>
     <Folder Include="dist\" />
     <Folder Include="examples\" />
+    <Folder Include="examples\manyToMany\" />
     <Folder Include="examples\oneToMany\" />
     <Folder Include="scripts\typings\mocha\" />
     <Folder Include="test\" />
@@ -71,6 +73,7 @@
     <Folder Include="scripts\typings\node\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="examples\manyToMany\manyToManyConfigurtion.js" />
     <Compile Include="examples\oneToMany\oneToManyConfiguration.js" />
     <Compile Include="karma.conf.js" />
     <Compile Include="karma.start.js" />

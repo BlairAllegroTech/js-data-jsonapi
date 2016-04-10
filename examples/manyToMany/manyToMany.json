@@ -1,0 +1,67 @@
+﻿{ 
+  "data": [
+    {
+      "type": "article",
+      "id": "1",
+      "attributes": {
+        "title": "JSON API paints my bikeshed!"
+      },
+      "relationships": {
+        "article_person": {
+          "links": {
+            "self": "http://example.com/article/1/relationships/author",
+            "related": "http://example.com/article/1/author"
+          },
+          "data": [
+            {"type": "person","id": "1"},
+            {"type": "person","id": "2"}
+          ]
+        }
+      },
+      "links": {
+        "self": "http://example.com/article/1"
+      }
+    }],
+
+  "included": [
+    {
+      "type": "person",
+      "id": "1",
+      "attributes": {
+        "name": "Bob Smith"
+      },
+      "relationships": {
+        "person_article": {
+          "links": {
+            "self": "http://example.com/author/1/relationships/article",
+            "related": "http://example.com/author/1",
+            "data": [{"type": "article","id": "1"}]
+          }
+        }
+      },
+      "links": {
+        "self": "http://example.com/person/1"
+      }
+    },
+    {
+      "type": "person",
+      "id": "2",
+      "attributes": {
+        "name": "John Doe"
+      },
+      "relationships": {
+        "person_article": {
+          "links": {
+            "self": "http://example.com/author/2/relationships/article",
+            "related": "http://example.com/author/2/article",
+            "data": [{"type": "article","id": "1"}]
+          }
+        }
+      },
+      "links": {
+        "self": "http://example.com/person/2"
+      }
+    }
+  ]
+
+}
