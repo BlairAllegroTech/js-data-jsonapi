@@ -33,7 +33,7 @@
             name: 'author',
             idAttribute: 'id',
             relations: {
-                // hasMany uses "localField" and "localKeys" or "foreignKey"                
+                // hasMany uses "localField" and "localKeys" or "foreignKey"
                 belongsTo: {
                     article: {
                         localField: 'article',

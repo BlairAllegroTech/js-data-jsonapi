@@ -20,9 +20,9 @@
             
             // Configure
             example.config = examples.oneToMany.config(ds);
-                        
+
             return loadJSON('/base/examples/oneToMany/oneToMany.json').then(function (json) {
-                example.json = json;                
+                example.json = json;
             });
         });
         
@@ -48,11 +48,11 @@
                 var comment2 = example.config.comment.get(2);
 
 
-                assert.equal(false, article.IsJsonApiReference, 'Expect article to be fully populated');                
-                assert.equal(false, comment1.IsJsonApiReference, 'Expect comment#1 to be fully populated');
-                assert.equal(false, comment2.IsJsonApiReference, 'Expect comment#2 to be fully populated');
+                assert.equal(article.IsJsonApiReference,  false, 'Expect article to be fully populated');
+                assert.equal(comment1.IsJsonApiReference, false, 'Expect comment#1 to be fully populated');
+                assert.equal(comment2.IsJsonApiReference, false, 'Expect comment#2 to be fully populated');
 
-                assert.equal(true, author.IsJsonApiReference, 'Expect author to be a refrence object only');
+                assert.equal(author.IsJsonApiReference, true , 'Expect author to be a reference object only');
             });
 
         });
@@ -93,12 +93,16 @@
                 var person1 = example.config.person.get(1);
                 var person2 = example.config.person.get(2);
                 
-                assert.equal(false, article.IsJsonApiReference, 'Expect article to be fully populated');
-                assert.equal(false, person1.IsJsonApiReference, 'Expect person#1 to be fully populated');
-                assert.equal(false, person2.IsJsonApiReference, 'Expect person#2 to be fully populated');
-                                
+                assert.equal(article.IsJsonApiReference, false, 'Expect article to be fully populated');
+                assert.equal(person1.IsJsonApiReference, false, 'Expect person#1 to be fully populated');
+                assert.equal(person2.IsJsonApiReference, false, 'Expect person#2 to be fully populated');
+
+                assert.isDefined(article.article_person[0], 'Expect article_person joining data to be populated');
+                assert.equal(article.article_person[0].author, person1, 'Expect article_person person to be person 1');
+
             });
 
         });
     });
+ 
 });

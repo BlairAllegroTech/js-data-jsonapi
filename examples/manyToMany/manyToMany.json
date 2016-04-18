@@ -34,9 +34,9 @@
         "person_article": {
           "links": {
             "self": "http://example.com/author/1/relationships/article",
-            "related": "http://example.com/author/1",
-            "data": [{"type": "article","id": "1"}]
-          }
+            "related": "http://example.com/author/1/article"
+          },
+          "data": [{"type": "article","id": "1"}]
         }
       },
       "links": {
@@ -53,9 +53,9 @@
         "person_article": {
           "links": {
             "self": "http://example.com/author/2/relationships/article",
-            "related": "http://example.com/author/2/article",
-            "data": [{"type": "article","id": "1"}]
-          }
+            "related": "http://example.com/author/2/article"
+          },
+          "data": [{"type": "article","id": "1"}]
         }
       },
       "links": {

@@ -75,7 +75,7 @@
             assert.equal(_this.requests[0].url, 'api/posts/1?test=test');
             assert.equal(_this.requests[0].method, 'GET');
             assert.deepEqual({
-                Authorization: 'test',                
+                Authorization: 'test',
                 Accept: 'application/vnd.api+json'
             }, _this.requests[0].requestHeaders);
             
@@ -84,12 +84,14 @@
         }, 30);
         
         return dsHttpAdapter.find(Post, 1).then(function (data) {
+
+            delete dsHttpAdapter.defaults.httpConfig.params;
+            delete dsHttpAdapter.defaults.httpConfig.headers;
+
             // We are not testing meta data yet
             ignoreMetaData(data);
             assert.deepEqual(data, p1.model, 'post should have been found');
-            
-            delete dsHttpAdapter.defaults.httpConfig.params;
-            delete dsHttpAdapter.defaults.httpConfig.headers;
+
         });
     });
     

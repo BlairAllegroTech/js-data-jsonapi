@@ -210,3 +210,13 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+
+/js-data-jsonapi-0.0.0-alpha.1.tgz
+/src/*.js
+*.map
+/ts-built
+
+/junit
+/dist
+/coverage
+/bower_components

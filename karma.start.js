@@ -233,7 +233,9 @@ beforeEach(function () {
     p1.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
         .WithAttribute('author', 'John')
         .WithAttribute('age', 30)
-        .WithAttribute('type', 'person'));
+        .WithAttribute('type', 'person')
+        //.WithLink('self', '/container/1/posts/5')
+    );
 
     p1.model = [{ Id: '5', age: 30, author: 'John', type:'person' }]; //ISMODEL: true, type: 'posts'
     

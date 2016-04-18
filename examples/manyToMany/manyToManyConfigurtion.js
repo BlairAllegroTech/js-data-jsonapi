@@ -57,7 +57,7 @@
                 person_article : { type: 'article', joinType: 'article_to_person' }
             },
             relations: {
-                // hasMany uses "localField" and "localKeys" or "foreignKey"                
+                // hasMany uses "localField" and "localKeys" or "foreignKey"
                 hasMany: {
                     article_to_person: {
                         localField: 'person_article',
