@@ -16,7 +16,7 @@ const jsonApiContentType: string = 'application/vnd.api+json';
 const JSONAPI_Related: string = 'related';
 
 
-//const jsDataBelongsTo : string = 'belongsTo';
+const jsDataBelongsTo : string = 'belongsTo';
 const jsDataHasMany: string = 'hasMany';
 const jsDataHasOne: string = 'hasOne';
 
@@ -159,6 +159,40 @@ export class SerializationOptions {
         }
 
         return null;
+    }
+
+    getParentRelationByLocalKey(localKey: string): JSData.RelationDefinition {
+        var match: JSData.RelationDefinition = null;
+        if (this.resourceDef.relations && this.resourceDef.relations.belongsTo) {
+            for (var r in this.resourceDef.relations.belongsTo) {
+                if (this.resourceDef.relations.belongsTo[r]) {
+                    DSUTILS.forEach(this.resourceDef.relations.belongsTo[r], (relation: JSData.RelationDefinition) => {
+                        if (relation.localKey === localKey) {
+                            match = relation;
+                            return false;
+                        }
+                    });
+                }
+            }
+        }
+        return match;
+    }
+
+    getParentRelationByLocalField(localField: string): JSData.RelationDefinition {
+        var match: JSData.RelationDefinition = null;
+        if (this.resourceDef.relations && this.resourceDef.relations.belongsTo) {
+            for (var r in this.resourceDef.relations.belongsTo) {
+                if (this.resourceDef.relations.belongsTo[r]) {
+                    DSUTILS.forEach(this.resourceDef.relations.belongsTo[r], (relation: JSData.RelationDefinition) => {
+                        if (relation.localField === localField) {
+                            match = relation;
+                            return false;
+                        }
+                    });
+                }
+            }
+        }
+        return match;
     }
 
     /**
@@ -532,7 +566,7 @@ export class JsonApiHelper {
 
             return newItem;
         };
-        var ReplaceRelationPlaceHolderVisitor = (data: Object): any => {
+        var toManyPlaceHolderVisitor = (data: Object): any => {
 
             if (data.constructor === ModelPlaceHolder) {
                 let itemPlaceHolder = <ModelPlaceHolder>data;
@@ -584,9 +618,67 @@ export class JsonApiHelper {
             return data;
         };
 
-        this.RelationshipVisitor(data, ReplaceRelationPlaceHolderVisitor);
-        this.RelationshipVisitor(included, ReplaceRelationPlaceHolderVisitor);
-        this.RelationshipVisitor(jsDataJoiningTables, ReplaceRelationPlaceHolderVisitor);
+        var toOnePlaceHolderVisitor = (data: Object, localField: string, opt: SerializationOptions): any => {
+            var val = data[localField];
+            if (val.constructor === ModelPlaceHolder) {
+                let itemPlaceHolder = <ModelPlaceHolder>val;
+
+                //If included or data or joining data contains the reference we are looking for then use it
+                let newItem = itemSelector(itemPlaceHolder);
+
+                if (newItem) {
+                    // To avoid circular dependanciesin the object graph that we send to jsData only include an object once.
+                    // Otherwise it is enough to reference an existing object by its foreighn key
+                    var meta = MetaData.TryGetMetaData(newItem);
+                    if (meta.incrementReferenceCount() === 1) {
+                        return newItem;
+                    } else {
+
+                        // hasOne usesforeign key and localal field
+                        // Apply foreign key to js-data object hasOne
+                        if (itemPlaceHolder.foreignKeyName) {
+                            newItem[itemPlaceHolder.foreignKeyName] = itemPlaceHolder.foreignKeyValue;
+                        } else {
+
+                            var relation = opt.getParentRelationByLocalField(localField);
+                            //Belongs to uses localfield and localkey
+                            if (relation && relation.type === jsDataBelongsTo) {
+                                data[relation.localKey] = itemPlaceHolder.id;
+                            }
+                        }
+                        return null;
+                    }
+                } else {
+                    //This item dosn't exist so create a model reference to it
+                    let newItem = <any>{};
+
+                    // Replace item in array with plain object, but with Primary key or any foreign keys set
+                    var itemOptions = options.getResource(itemPlaceHolder.type);
+
+                    // Apply foreign key to js-data object 
+                    if (itemPlaceHolder.foreignKeyName) {
+                        newItem[itemPlaceHolder.foreignKeyName] = itemPlaceHolder.foreignKeyValue;
+                    }
+
+                    let metaData = new MetaData(itemPlaceHolder.type);
+                    metaData.isJsonApiReference = true;
+
+                    newItem[JSONAPI_META] = metaData;
+                    newItem[itemOptions.idAttribute] = itemPlaceHolder.id;
+
+                    // Attach liftime events
+                    JsonApiHelper.AssignLifeTimeEvents(itemOptions.def());
+
+                    return newItem;
+                }
+            }
+
+            return data[localField];
+        };
+
+        this.RelationshipVisitor(data, options, toManyPlaceHolderVisitor, toOnePlaceHolderVisitor);
+        this.RelationshipVisitor(included, options, toManyPlaceHolderVisitor, toOnePlaceHolderVisitor);
+        this.RelationshipVisitor(jsDataJoiningTables, options, toManyPlaceHolderVisitor, toOnePlaceHolderVisitor);
 
         // Register all data types for life time events
         var registration = (type: string) => {
@@ -606,10 +698,10 @@ export class JsonApiHelper {
         //this.ReplaceModelPlaceHolderRelations(included, options);
         //this.ReplaceModelPlaceHolderRelations(jsDataJoiningTables, options);
 
+        // Copy top level objects
         // This is an array of top level objects with child, object references and included objects
         var jsDataArray = [];
         if (data) {
-            // Replace data references with included data where available
             for (var dataType in data) {
 
                 if (data[dataType]) {
@@ -626,7 +718,9 @@ export class JsonApiHelper {
         return new DeSerializeResult(jsDataArray, newResponse);
     }
 
-    private static RelationshipVisitor(data: any, visitor: (relationData: Object) => any) {
+    private static RelationshipVisitor(data: any, options: SerializationOptions,
+        toManyVisitor: (relationData: Object) => any,
+        toOneVisitor: (relationData: Object, fieldName: string, opt: SerializationOptions) => any) {
         if (data) {
             // Replace data references with included data where available
             for (var dataType in data) {
@@ -642,8 +736,9 @@ export class JsonApiHelper {
                                 if (DSUTILS.isArray(dataObject[prop])) {
 
                                     // hasMany Relationship
+                                    // With many relations we can set the foreign key and delete the object to prevent circularrelations
                                     DSUTILS.forEach(dataObject[prop], (item: ModelPlaceHolder, index: number, source: Array<ModelPlaceHolder>) => {
-                                        var result = visitor(item);
+                                        var result = toManyVisitor(item);
                                         if (result) {
                                             source[index] = result;
                                         } else {
@@ -664,8 +759,12 @@ export class JsonApiHelper {
                                     }
 
                                 } else {
+                                    // hasOne, belongsTo relations
                                     // hasOne or parent Relationship
-                                    var result = visitor(dataObject[prop]);
+                                    var opt = options.getResource(dataType);
+
+                                    // Has one relations we can set the foreign key and remove the object
+                                    var result = toOneVisitor(dataObject, prop, opt);
                                     if (result) {
                                         dataObject[prop] = result;
                                     } else {
@@ -1074,10 +1173,9 @@ export class JsonApiHelper {
                                 type: joiningTypeResourceDef.type,
 
                                 dataLocalField: relationshipDef.localField,
-                                //dataLocalKey: relationshipDef.localKey,
+                                dataForeignKey: relationshipDef.foreignKey,
 
-                                foreignDataField: joiningTableChildRelation[0].localField
-                                //foreignDataKey: joiningTableChildRelation.localKey
+                                joinTypeDef: joiningTypeResourceDef
                             };
 
                             // So we will need to attach joining data to the field before returning it
@@ -1085,31 +1183,45 @@ export class JsonApiHelper {
                             //Create an instance of the joining table.
                             joinTableFactory = function(foreignRecord: JsonApi.JsonApiData, relationshipLink: string) {
 
-                                var pk = data.id + foreignRecord.id;
+                                // Compare typenames in order to determine order to combine pk vales.
+                                // Any algorithum that results in the same value regardless of the order will do here
+                                var pk = (data.type > foreignRecord.type) ? data.id + foreignRecord.id : foreignRecord.id + data.id;
                                 joinData[joinState.type] = (joinData[joinState.type] || {});
+
+                                // Set foreign field
+                                var joinTableRelation = joinState.joinTypeDef.getParentRelationByLocalKey(joinState.dataForeignKey);
+
+                                if (!joinTableRelation) {
+                                    throw new Error('No "BelongsTo" relationship found on joining table ' + joinState.joinTypeDef.type + ' with field name:' + joinState.dataForeignKey);
+                                }
 
                                 // If it exists should not need to alter it
                                 if (!joinData[joinState.type][pk]) {
+
                                     var metaData = new MetaData(joinState.type);
                                     metaData.isJsonApiReference = false;
 
                                     // Unique key
                                     let fields = {};
                                     fields[joinState.idAttribute] = pk;
-                                    fields['type'] = joinState.type;
+                                    //fields['type'] = joinState.type;
 
                                     //Set foreign key of this type
                                     // TODO : Must set foreign field rather than foreign key so that js data can build objects correctly
                                     //fields[joinState.dataLocalField] = new ModelPlaceHolder(data.type, data.id)
                                     //    .WithForeignKey(joinState.dataLocalField, data.id, data.type);
 
-                                    // Set foreign field
-                                    fields[joinState.foreignDataField] = new ModelPlaceHolder(foreignRecord.type, foreignRecord.id)
-                                        .WithForeignKey(joinState.foreignDataField, foreignRecord.id, foreignRecord.type);
+
+                                    //Joining object should be a parent belongsto relation
+                                    fields[joinTableRelation.localKey] = data.id;
+                                    fields[joinTableRelation.localField] = new ModelPlaceHolder(data.type, data.id);
+
+                                    //foreignRecord[joinState.dataLocalField] = new ModelPlaceHolder(joinState.type, pk)
+                                    //    .WithForeignKey(joinState.dataForeignKey, data.id, data.type);
 
                                     // Append the id of the synthisized pk...Not sure if we will get away with this as we may not always
                                     // have both of these, say for inserts
-                                    metaData.selfLink = relationshipLink + '/' + fields[joinState.idAttribute];
+                                    metaData.selfLink = relationshipLink + '/' + pk;
 
                                     // May need to flag this as a temp object not sourced from server...
                                     fields[JSONAPI_META] = metaData;
@@ -1120,12 +1232,17 @@ export class JsonApiHelper {
                                     // Already exists so just set relation on it
 
                                     // Set foreign field
-                                    joinData[joinState.type][pk][joinState.foreignDataField] = new ModelPlaceHolder(foreignRecord.type, foreignRecord.id)
-                                        .WithForeignKey(joinState.foreignDataField, foreignRecord.id, foreignRecord.type);
+                                    var join = joinData[joinState.type][pk];
+
+                                    join[joinTableRelation.localKey] = data.id;
+                                    join[joinTableRelation.localField] = new ModelPlaceHolder(data.type, data.id);
+
+                                    //join[joinTableRelation.localField] = new ModelPlaceHolder(foreignRecord.type, foreignRecord.id)
+                                    //   .WithForeignKey(joinTableRelation.foreignKey, data.id, data.type);
                                 }
 
                                 return new ModelPlaceHolder(joinState.type, pk)
-                                    .WithForeignKey(joinState.dataLocalField, data.id, data.type);
+                                    .WithForeignKey(joinState.dataForeignKey, data.id, data.type);
                             };
                         }
                     }

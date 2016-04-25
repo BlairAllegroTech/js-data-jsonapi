@@ -82,23 +82,29 @@
             }, 30);
             
             return example.config.article.find(1).then(function (data) {
-                assert.isDefined(example.config.article.get(1), 'Expect article#1 to exist');
-                
-                assert.isDefined(example.config.person.get(1), 'Expect person#1 to exist');
-                assert.isDefined(example.config.person.get(2), 'Expect person#2 to exist');
-                
-                //assert.isDefined(example.config.author.get(9), 'Expect author#9 to exist');
-                
                 var article = example.config.article.get(1);
                 var person1 = example.config.person.get(1);
                 var person2 = example.config.person.get(2);
+
+                assert.isDefined(article, 'Expect article#1 to exist');
+                assert.isDefined(person1, 'Expect person#1 to exist');
+                assert.isDefined(person2, 'Expect person#2 to exist');
+                
+                //assert.isDefined(example.config.author.get(9), 'Expect author#9 to exist');
+                
                 
                 assert.equal(article.IsJsonApiReference, false, 'Expect article to be fully populated');
                 assert.equal(person1.IsJsonApiReference, false, 'Expect person#1 to be fully populated');
                 assert.equal(person2.IsJsonApiReference, false, 'Expect person#2 to be fully populated');
 
                 assert.isDefined(article.article_person[0], 'Expect article_person joining data to be populated');
+                assert.equal(article.article_person[0].article, article, 'Expect article_person person to be person 1');
                 assert.equal(article.article_person[0].author, person1, 'Expect article_person person to be person 1');
+                assert.equal(article.article_person[1].author, person2, 'Expect article_person person to be person 2');
+                assert.equal(article.article_person[0].author.person_article[0].article, article, 'Expect person_article to be article');
+
+                assert.isDefined(person1.person_article[0], 'Expect person_article joining data to be populated');
+                assert.equal(person1.person_article[0].article, article, 'Expect article_person person to be person 1');
 
             });
 
