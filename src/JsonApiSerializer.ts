@@ -461,7 +461,7 @@ export class JsonApiHelper {
                 result.WithData(this.ObjectToJsonApiData(options, item));
             });
         } else {
-            // Not sire this is really necessary can just always send and array ?
+            // Not sure this is really necessary could just always send an array ?
             result.data = <any>this.ObjectToJsonApiData(options, contents);
         }
         return result;
@@ -1028,8 +1028,9 @@ export class JsonApiHelper {
             throw new Error('Type required within options');
         }
 
+
         var data = new JsonApi.JsonApiData(
-            (contents[options.idAttribute] || '').toString(), //JsonApi id is always a string,it can be empty for a new unstored object!
+            (contents[options.idAttribute] || '').toString(), //JsonApi id is always a string, it can be empty for a new unstored object!
             options.type);
 
         for (var prop in contents) {
