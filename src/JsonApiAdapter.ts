@@ -285,6 +285,12 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     //IDSAdapter
     public create(config: JSData.DSResourceDefinition<any>, attrs: Object, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
         let localOptions = this.configureSerializers(options);
+
+        // Id
+        if (attrs[localOptions.idAtttribute]) {
+            attrs[localOptions.idAtttribute] = attrs[localOptions.idAtttribute].toString();
+        }
+
         return this.adapter.create(config, attrs, localOptions).then(
             null,
             (error: any) => {
@@ -296,8 +302,9 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     }
 
     public destroy(config: JSData.DSResourceDefinition<any>, id: string | number, options?: JSData.DSConfiguration): JSData.JSDataPromise<void> {
+        let idString = id.toString();
         let localOptions = this.configureSerializers(options);
-        return this.adapter.destroy(config, id, localOptions).then(
+        return this.adapter.destroy(config, idString, localOptions).then(
             null,
             (error : any) => {
                 return this.DSUtils.Promise.reject(this.HandleError(config, localOptions, error));
@@ -316,8 +323,9 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     }
 
     public find(config: JSData.DSResourceDefinition<any>, id: string | number, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
+        let idString = id.toString();
         let localOptions = this.configureSerializers(options);
-        return this.adapter.find(config, id, localOptions).then(
+        return this.adapter.find(config, idString, localOptions).then(
             //(response: any) => {
             //    return this.DSUtils.Promise.resolve(this.DSUtils.isArray(response) ? response[0] : response);                
             //}
@@ -339,17 +347,18 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     }
 
     public update(config: JSData.DSResourceDefinition<any>, id: string | number, attrs: Object, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
+        let idString = id.toString();
         if (attrs[config.idAttribute]) {
-            if (attrs[config.idAttribute] !== id) {
+            if (attrs[config.idAttribute] !== idString) {
                 throw new Error(
                     'Json Api update expected supplied id and the primary key attribute "' + config.idAttribute +
                     '" to be the same, you may have called update on the wrong id?');
             }
         } else {
-            attrs[config.idAttribute] = id;
+            attrs[config.idAttribute] = idString;
         }
         let localOptions = this.configureSerializers(options);
-        return this.adapter.update(config, id, attrs, localOptions).then(
+        return this.adapter.update(config, idString, attrs, localOptions).then(
             null,
             (error: any) => {
                 return this.DSUtils.Promise.reject(this.HandleError(config, localOptions, error));

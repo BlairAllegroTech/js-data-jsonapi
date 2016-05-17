@@ -3,7 +3,8 @@
         var _this = this;
 
         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
+            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                .WithId('1')
                 .WithLink('self', '/container/1')
                 .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
@@ -31,12 +32,14 @@
             assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
             var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                 .WithLink('self', '/container/1/posts')
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
+                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                    .WithId('5')
                     .WithLink('self', '/container/1/posts/5')
                     .WithAttribute('author', 'John')
                     .WithAttribute('age', 30)
                 )
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('10', 'posts')
+                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                    .WithId('10')
                     .WithLink('self', '/container/1/posts/10')
                     .WithAttribute('author', 'Mark')
                     .WithAttribute('age', 25)
@@ -106,7 +109,8 @@
         var _this = this;
         
         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
+            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                .WithId('1')
                 .WithLink('self', '/container/1')
                 .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
@@ -133,12 +137,14 @@
             assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
             var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                 .WithLink('self', '/container/1/posts')
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
+                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                    .WithId('5')
                     .WithLink('self', '/container/1/posts/5')
                     .WithAttribute('author', 'John')
                     .WithAttribute('age', 30)
                 )
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('10', 'posts')
+                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                    .WithId('10')
                     .WithLink('self', '/container/1/posts/10')
                     .WithAttribute('author', 'Mark')
                     .WithAttribute('age', 25)
@@ -178,7 +184,8 @@
         var _this = this;
 
         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
+            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                .WithId('1')
                 .WithLink('self', '/container/1')
                 .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
@@ -205,12 +212,14 @@
             assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
             var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                 .WithLink('self', '/container/1/posts')
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
+                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                    .WithId('5')
                     .WithLink('self', '/container/1/posts/5')
                     .WithAttribute('author', 'John')
                     .WithAttribute('age', 30)
             )
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('10', 'posts')
+                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                    .WithId('10')
                     .WithLink('self', '/container/1/posts/10')
                     .WithAttribute('author', 'Mark')
                     .WithAttribute('age', 25)

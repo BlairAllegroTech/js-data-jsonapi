@@ -70,13 +70,15 @@ export class JsonApiData {
     links: { [key: string]: MetaLink };
     relationships: { [key: string]: JsonApiRelationship };
 
-    constructor(id: string, type: string) {
-        this.id = id;
+
+    constructor(type: string) {
+        this.id = undefined;
         this.type = type;
         this.attributes = {};
         this.links = {};
         this.relationships = {};
     }
+
 
     WithAttribute(key: string, value: string): JsonApiData {
         this.attributes[key] = value;
@@ -129,7 +131,7 @@ export class JsonApiRelationship {
     }
 
     WithData(type: string, id: string): JsonApiRelationship {
-        this.data.push(new JsonApiData(id, type));
+        this.data.push(new JsonApiData(type).WithId(id));
         return this;
     }
 

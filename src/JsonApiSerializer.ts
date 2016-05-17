@@ -495,7 +495,7 @@ export class JsonApiHelper {
                     }
 
                     // Add JsonApiData
-                    newResponse.WithIncluded(DSUTILS.deepMixIn(new JsonApi.JsonApiData('', ''), item));
+                    newResponse.WithIncluded(DSUTILS.deepMixIn(new JsonApi.JsonApiData('unknown'), item));
                 });
             }
 
@@ -512,11 +512,11 @@ export class JsonApiHelper {
                         }
                     }
                     // Add JsonApiData
-                    newResponse.WithData(DSUTILS.deepMixIn(new JsonApi.JsonApiData('', ''), item));
+                    newResponse.WithData(DSUTILS.deepMixIn(new JsonApi.JsonApiData(''), item));
                 });
             } else {
                 this.NormaliseLinkFormat((<any>response.data).links);
-                newResponse.WithData(DSUTILS.deepMixIn(new JsonApi.JsonApiData('', ''), <any>response.data));
+                newResponse.WithData(DSUTILS.deepMixIn(new JsonApi.JsonApiData(''), <any>response.data));
             }
         }
 
@@ -1029,9 +1029,12 @@ export class JsonApiHelper {
         }
 
 
-        var data = new JsonApi.JsonApiData(
-            (contents[options.idAttribute] || '').toString(), //JsonApi id is always a string, it can be empty for a new unstored object!
-            options.type);
+        var data = new JsonApi.JsonApiData(options.type);
+
+        //JsonApi id is always a string, it can be empty for a new unstored object!
+        if (contents[options.idAttribute]) {
+            data.id = contents[options.idAttribute];
+        }
 
         for (var prop in contents) {
             // Skip id attribute as it has already been copied to the id field out side of the attributes collection
@@ -1044,7 +1047,7 @@ export class JsonApiHelper {
                 var childRelation = options.getChildRelation(prop);
 
                 if (DSUTILS.isArray(contents[prop])) {
-                    // To many relation                    
+                    // To many relation
                     if (childRelation) {
                         //if (contents[prop][0] && contents[prop][0].hasOwnProperty(ISMODEL)) {
 
@@ -1076,7 +1079,8 @@ export class JsonApiHelper {
                     var id = contents[resourceDef.idAttribute];
 
                     var relation = new JsonApi.JsonApiRelationship();
-                    relation.data = <any>new JsonApi.JsonApiData(id, type);
+                    relation.data = <any>new JsonApi.JsonApiData(type)
+                        .WithId(id);
 
                     if (childRelation.type === jsDataHasMany) {
                         data.WithRelationship(prop, relation);

@@ -9,7 +9,7 @@
             assert.equal(_this.requests[0].method, 'PUT');
             assert.isDefined(_this.requests[0].requestHeaders);
             assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-            assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 }, links: {}, relationships: {} } }));
+            assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: '1', type: 'posts', attributes: { author: 'John', age: 30 }, links: {}, relationships: {} } }));
             
         
             _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
