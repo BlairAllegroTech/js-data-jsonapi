@@ -31,7 +31,7 @@ module.exports = function (config) {
         basePath: './',
         frameworks: ['sinon', 'chai', 'mocha'],
         plugins: [
-			// these plugins will be require() by Karma
+            // these plugins will be require() by Karma
             'karma-sinon',
             'karma-mocha',
             'karma-chai',
@@ -40,7 +40,8 @@ module.exports = function (config) {
             'karma-firefox-launcher',
             'karma-coverage',
             'karma-browserstack-launcher',
-            'karma-junit-reporter'
+            'karma-junit-reporter',
+            'karma-html-reporter'
         ],
         autoWatch: true,
         autoWatchBatchDelay: 4000,
@@ -53,17 +54,17 @@ module.exports = function (config) {
             'node_modules/js-data/dist/js-data.js',
             'node_modules/js-data-http/dist/js-data-http.js',
             'dist/js-data-jsonapi.js',
-                        
-            'karma.start.js',              
+
+            'karma.start.js',
             'test/**/*.js',
-            
+
             'examples/**/*.js',
 
             // fixtures
             { pattern: 'examples/**/*.json', watched: true, served: true, included: false }
         ],
         
-        reporters: ['progress', 'coverage', 'junit'],
+        reporters: ['progress', 'coverage', 'junit', 'html'],
         
         preprocessors: {
             //'dist/js-data-jsonapi.js': ['coverage']
@@ -81,6 +82,22 @@ module.exports = function (config) {
             outputFile: undefined,
             suite: 'js-data-jsonapi',
             useBrowserName: false
+        },
+
+        // the default configuration 
+        htmlReporter: {
+            outputDir: 'karma_html', // where to put the reports  
+            templatePath: null, // set if you moved jasmine_template.html 
+            focusOnFailures: true, // reports show failures on start 
+            namedFiles: false, // name files instead of creating sub-directories 
+            pageTitle: null, // page title for reports; browser info by default 
+            urlFriendlyName: false, // simply replaces spaces with _ for files/dirs 
+            reportName: 'unit_test_results', // report summary filename; browser info by default 
+            
+            
+            // experimental 
+            preserveDescribeNesting: false, // folded suites stay folded  
+            foldAll: false, // reports start folded (only with preserveDescribeNesting) 
         },
         
         browserStack: {
@@ -104,6 +121,8 @@ module.exports = function (config) {
         // level of logging
         logLevel: config.LOG_INFO,
         
+        client: { captureConsole: false },
+
         // If browser does not capture in given timeout [ms], kill it
         captureTimeout: 30000,
         

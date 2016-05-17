@@ -220,3 +220,4 @@ ModelManifest.xml
 /dist
 /coverage
 /bower_components
+/karma_html

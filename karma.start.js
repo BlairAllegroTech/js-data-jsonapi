@@ -230,7 +230,8 @@ beforeEach(function () {
     
     p1 = {};
     p1.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
-    p1.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
+    p1.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+        .WithId('5')
         .WithAttribute('author', 'John')
         .WithAttribute('age', 30)
         .WithAttribute('type', 'person')
@@ -241,7 +242,8 @@ beforeEach(function () {
     
     p11 = {};
     p11.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
-    p11.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('5', 'posts')
+    p11.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+        .WithId('5')
         .WithLink('self', '/container/1/posts/5')
         .WithAttribute('author', 'John')
         .WithAttribute('age', 30));
@@ -251,7 +253,8 @@ beforeEach(function () {
     DataWithRelation.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
     DataWithRelation.jsonApiData
         .WithData(
-            new DSJsonApiAdapter.JsonApi.JsonApiData('1', 'container')
+        new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                .WithId('1')
                 .WithLink('self', '/container/1')
                 .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship()
