@@ -13,7 +13,7 @@
         
         // This is the joining table that links Articles and Authors
         var ArticleAuthors = ds.defineResource( {
-            name: 'article_to_person',
+            name: 'article_author',
             idAttribute: 'id',
             
             relations: {
@@ -35,14 +35,14 @@
             idAttribute: 'id',
             meta: {
                 // Tells adapter that this is a joining table to person used for many to many relations
-                article_person : { type: 'person', joinType: 'article_to_person' }
+                authors : { type: 'person', joinType: 'article_author' }
             },
             relations: {
                 // hasMany uses "localField" and "localKeys" or "foreignKey"
                 // In the case of one to many we use foreignKey
                 hasMany: {
-                    article_to_person: {
-                        localField: 'article_person',
+                    article_author: {
+                        localField: 'authors',
                         foreignKey: 'articleid'
                     }
                 }
@@ -54,13 +54,13 @@
             idAttribute: 'id',
             meta: {
                 // Tells adapter that this is a joining table to article used for many to many relations
-                person_article : { type: 'article', joinType: 'article_to_person' }
+                articles : { type: 'article', joinType: 'article_author' }
             },
             relations: {
                 // hasMany uses "localField" and "localKeys" or "foreignKey"
                 hasMany: {
-                    article_to_person: {
-                        localField: 'person_article',
+                    article_author: {
+                        localField: 'articles',
                         foreignKey: 'personid'
                     }
                 }

@@ -7,7 +7,7 @@
         "title": "JSON API paints my bikeshed!"
       },
       "relationships": {
-        "article_person": {
+        "authors": {
           "links": {
             "self": "http://example.com/article/1/relationships/author",
             "related": "http://example.com/article/1/author"
@@ -31,7 +31,7 @@
         "name": "Bob Smith"
       },
       "relationships": {
-        "person_article": {
+        "articles": {
           "links": {
             "self": "http://example.com/author/1/relationships/article",
             "related": "http://example.com/author/1/article"
@@ -50,7 +50,7 @@
         "name": "John Doe"
       },
       "relationships": {
-        "person_article": {
+        "articles": {
           "links": {
             "self": "http://example.com/author/2/relationships/article",
             "related": "http://example.com/author/2/article"

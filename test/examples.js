@@ -89,22 +89,25 @@
                 assert.isDefined(article, 'Expect article#1 to exist');
                 assert.isDefined(person1, 'Expect person#1 to exist');
                 assert.isDefined(person2, 'Expect person#2 to exist');
-                
-                //assert.isDefined(example.config.author.get(9), 'Expect author#9 to exist');
-                
-                
+
                 assert.equal(article.IsJsonApiReference, false, 'Expect article to be fully populated');
                 assert.equal(person1.IsJsonApiReference, false, 'Expect person#1 to be fully populated');
                 assert.equal(person2.IsJsonApiReference, false, 'Expect person#2 to be fully populated');
 
-                assert.isDefined(article.article_person[0], 'Expect article_person joining data to be populated');
-                assert.equal(article.article_person[0].article, article, 'Expect article_person person to be person 1');
-                assert.equal(article.article_person[0].author, person1, 'Expect article_person person to be person 1');
-                assert.equal(article.article_person[1].author, person2, 'Expect article_person person to be person 2');
-                assert.equal(article.article_person[0].author.person_article[0].article, article, 'Expect person_article to be article');
+                assert.isDefined(article.authors[0], 'Expect article.authors joining data to be populated');
+                assert.strictEqual(article.authors[0].article, article, 'Expect article_person person to be person 1');
+                assert.strictEqual(article.authors[0].author, person1, 'Expect article_person person to be person 1');
+                assert.strictEqual(article.authors[1].author, person2, 'Expect article_person person to be person 2');
+                
+                assert.strictEqual(article.authors[0].author.articles[0].article, article, 'Expect article stored in joining table to be same article');
+                
+                assert.isDefined(person1.articles[0], 'Expect person1.articles joining data to be populated');
+                assert.strictEqual(person1.articles[0].author, person1, 'Expect person1 author to be person1');
+                assert.strictEqual(person1.articles[0].article, article, 'Expect person1 article to be article1');
 
-                assert.isDefined(person1.person_article[0], 'Expect person_article joining data to be populated');
-                assert.equal(person1.person_article[0].article, article, 'Expect article_person person to be person 1');
+                assert.isDefined(person2.articles[0], 'Expect person2.articles joining data to be populated');
+                assert.strictEqual(person2.articles[0].author, person2, 'Expect person2 author to be person 2');
+                assert.strictEqual(person2.articles[0].article, article, 'Expect person2 article to be article1');
 
             });
 
