@@ -336,6 +336,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
             }
         );
     }
+
     public findAll(config: JSData.DSResourceDefinition<any>, params?: JSData.DSFilterArg, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
         let localOptions = this.configureSerializers(options);
         return this.adapter.findAll(config, params, localOptions).then(
