@@ -35,6 +35,7 @@
         reject(error: any): Promise<any>;
     }
 
+    // See: https://github.com/js-data/js-data/blob/master/src/utils.js
     interface DSUtil {
         Promise: PromiseLib; //{ <R>(callback: (resolve: (value?: R | Thenable<R>) => void, reject: (error?: any) => void) => void) };
         deepMixIn: (dest: any, source: any) => any;

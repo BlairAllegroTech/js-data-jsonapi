@@ -12,24 +12,14 @@ import JSDataHttp = require('js-data-http');
 import Helper = require('./JsonApiSerializer');
 export import JsonApi = require('./JsonApi');
 
-//class Headers {
-//    common: { [name: string]: string };
-
-//    constructor() {
-//        this.common = {};
-//    }
-//}
-
 const HttpNoContent: Number = 204;
 
 export class JsonApiAdapter implements JSData.IDSAdapter {
 
-    //TODO Add typings, see: https://github.com/js-data/js-data/blob/master/src/utils.js
     private DSUtils: JSData.DSUtil;
     private adapter: JSData.DSHttpAdapterExtended;
     private adapterGetPath: Function;
     adapterHTTP: Function;
-    // adapterPOST: Function;
 
     get defaults(): JsonApiAdapter.DSJsonApiAdapterOptions {
         return this.adapter.defaults;
@@ -42,7 +32,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         var httpAdapter: typeof DSHttpAdapter = JSDataHttp;
         this.DSUtils = JSDataLib['DSUtils'];
 
-        //TODO : Set defaults on options        
+        //No longer use options
         this.serialize = this.SerializeJsonResponse;
         this.deserialize = this.DeSerializeJsonResponse;
 
@@ -54,23 +44,23 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         //    defaults.error = (a, b) => console[typeof console.error === 'function' ? 'error' : 'log'](a, b)
         //}
 
-        //options = options || {};
-        //this.DSUtils.deepMixIn(options, defaults);            
+        // Create base adapter
         this.adapter = <JSData.DSHttpAdapterExtended> (new httpAdapter(options));
 
         // Override default get path implementation
         this.adapterGetPath = this.adapter.getPath;
         this.adapterHTTP = this.adapter.HTTP;
-        //this.adapterPOST = this.adapterPOST;
 
 
+        // Override Get Path
         this.adapter.getPath = (method: string, resourceConfig: JSData.DSResourceDefinition<any>, id: Object, options: JSData.DSConfiguration): string => {
             return this.getPath(method, resourceConfig, id, options);
         };
+
+        // Override HTTP
         this.adapter.HTTP = (options: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> => {
             return this.HTTP(options);
         };
-        //this.adapter.POST = this.POST;
     }
 
     SerializeJsonResponse(resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object): any {
@@ -81,7 +71,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     DeSerializeJsonResponse(resourceConfig: JSData.DSResourceDefinition<any>, response: JSData.DSHttpAdapterPromiseResolveType): any {
         //Only process JSON Api responses!!
         if (Helper.JsonApiHelper.ContainsJsonApiContentTypeHeader(response.headers)) {
-            // TODO : Decode Json API Error response                
+            // Decode Json API Error response
             if (response.data.errors) {
                 response.data = Helper.JsonApiHelper.FromJsonApiError(response.data);
             } else {
@@ -203,18 +193,18 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         * @desc Configure serialization and deserialization for the request using 
         * either axios or $http configuration options
         * @param {object} options axios or $http config options
-        * @returns {object} options copy of options with serializers configured
+        * @returns {object} options copy of options with serializers configured for jsonapi
         * @memberOf JsonApiAdapter
         */
     configureSerializers(options: JSData.DSConfiguration): any {
         options = this.DSUtils.copy(options) || {};
         options['headers'] = options['headers'] || {};
 
-        //Jsoin Api requires accept header
+        //Json Api requires accept header
         Helper.JsonApiHelper.AddJsonApiAcceptHeader(options['headers']);
         Helper.JsonApiHelper.AddJsonApiContentTypeHeader(options['headers']);
 
-        // Ensure that we always call the JsonApi serializer first then any other serializers                
+        // Ensure that we always call the JsonApi serializer first then any other serializers
         var serialize = options['serialize'] || this.defaults.serialize;
         if (serialize) {
             options['serialize'] = (resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object) => {
@@ -226,7 +216,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
             };
         }
 
-        // Ensure that we always call the JsonApi deserializer first then any other deserializers                
+        // Ensure that we always call the JsonApi deserializer first then any other deserializers
         var deserialize = options['deserialize'] || this.defaults.deserialize;
         if (deserialize) {
             options['deserialize'] = (resourceConfig: JSData.DSResourceDefinition<any>, data: JSData.DSHttpAdapterPromiseResolveType) => {
@@ -242,6 +232,13 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     }
 
     // DSHttpAdapter uses axios or $http, so options are axios config objects or $http config options.
+
+    /**
+     * @name HTTP
+     * @desc Performs an HTTP request and receives resposne
+     * @param options
+     * @memberOf JsonApiAdapter
+     */
     public HTTP(options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {
         return this.adapterHTTP.apply(this.adapter, [options])
             .then((response: JSData.DSHttpAdapterPromiseResolveType) => {
@@ -282,7 +279,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     //}
 
 
-    //IDSAdapter
+    // IDSAdapter
     public create(config: JSData.DSResourceDefinition<any>, attrs: Object, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
         let localOptions = this.configureSerializers(options);
 

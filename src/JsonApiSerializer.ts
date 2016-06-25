@@ -426,9 +426,7 @@ export class JsonApiHelper {
     }
 
     public static AddJsonApiContentTypeHeader(headers: { [name: string]: string }): void {
-        //if (!headers['Content-Type'])
         headers['Content-Type'] = jsonApiContentType;
-        //else {}
     }
 
     public static AddJsonApiAcceptHeader(headers: { [name: string]: string }): void {
@@ -790,7 +788,8 @@ export class JsonApiHelper {
         }
     }
 
-
+    // Obsolete to be removed
+    /*
     private static ReplaceModelPlaceHolderRelations(included: any, options: SerializationOptions) {
         //Store data included as type,id key pairs
         if (included) {
@@ -866,8 +865,10 @@ export class JsonApiHelper {
             }
         }
     }
+    */
 
     /**
+        * @Obsolete
         * @name NormaliseDataObjectGraph
         * @desc Convert all data relationshipts to real objects taken from 1 Included data, then data or joiningdata
         * @param {any} data Json data
@@ -877,6 +878,7 @@ export class JsonApiHelper {
         * @returns {string} JsonApi rest service Url
         * @memberOf JsonApiAdapter
         */
+    /*
     private static NormaliseDataObjectGraph(data: any, included: any, jsDataJoiningTables: any, options: SerializationOptions) : Array<any> {
 
         // This is an array of top level objects with child, object references and included objects
@@ -987,7 +989,7 @@ export class JsonApiHelper {
         }
         return jsDataArray;
     }
-
+    */
 
     private static CreateErrorResponse(title: string, detail: string): JsonApi.JsonApiRequest {
         var response = new JsonApi.JsonApiRequest();

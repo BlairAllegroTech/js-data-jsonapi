@@ -183,13 +183,7 @@ export class JsonApiError {
     }
 }
 
-//class Source {
-//    pointer: string;
-//    parameterDecorator: string;
-//}
-
 export class JsonApiVersion {
     version: string;
     meta: Meta;
 }
-
