@@ -706,7 +706,7 @@ export class JsonApiHelper {
                     for (var dataId in data[dataType]) {
 
                         if (data[dataType][dataId]) {
-                            jsDataArray.push( data[dataType][dataId] );
+                            jsDataArray.push(data[dataType][dataId]);
                         }
                     }
                 }
@@ -787,209 +787,6 @@ export class JsonApiHelper {
             }
         }
     }
-
-    // Obsolete to be removed
-    /*
-    private static ReplaceModelPlaceHolderRelations(included: any, options: SerializationOptions) {
-        //Store data included as type,id key pairs
-        if (included) {
-            // Replace data references with included data where available
-            for (var dataType in included) {
-
-                if (included[dataType]) {
-                    for (var dataId in included[dataType]) {
-
-                        if (included[dataType][dataId]) {
-                            var includedObject = included[dataType][dataId];
-
-                            for (var prop in includedObject) {
-
-                                if (DSUTILS.isArray(includedObject[prop])) {
-                                    DSUTILS.forEach(<Array<Object>>(includedObject[prop]), (item: Object, index: number, source: Array<Object>) => {
-                                        if (item.constructor === ModelPlaceHolder) {
-                                            let placeholder = <ModelPlaceHolder>item;
-
-                                            var itemOptions = options.getResource(placeholder.type);
-
-                                            // Convert any remaining model place holders to objects
-                                            let metaData = new MetaData(placeholder.type);
-                                            metaData.isJsonApiReference = true;
-
-                                            let newItem = <any>{};
-                                            newItem[JSONAPI_META] = metaData;
-                                            newItem[itemOptions.idAttribute] = placeholder.id;
-
-                                            // Apply foreign key to js-data object 
-                                            if (placeholder.foreignKeyName) {
-                                                newItem[placeholder.foreignKeyName] = placeholder.foreignKeyValue;
-                                            }
-
-                                            // Replace item in array with data from included or data, data
-                                            source[index] = newItem;
-
-                                            // Attach liftime events
-                                            JsonApiHelper.AssignLifeTimeEvents(itemOptions.def());
-                                        }
-                                    });
-                                } else {
-                                    let item = includedObject[prop];
-                                    if (item.constructor === ModelPlaceHolder) {
-                                        let placeholder = <ModelPlaceHolder>item;
-
-                                        var itemOptions = options.getResource(placeholder.type);
-
-                                        // Convert any remaining model place holders to objects
-                                        let metaData = new MetaData(placeholder.type);
-                                        metaData.isJsonApiReference = true;
-
-                                        let newItem = <any>{};
-                                        newItem[JSONAPI_META] = metaData;
-                                        newItem[itemOptions.idAttribute] = placeholder.id;
-
-                                        // Apply foreign key to js-data object 
-                                        if (placeholder.foreignKeyName) {
-                                            newItem[placeholder.foreignKeyName] = placeholder.foreignKeyValue;
-                                        }
-
-                                        // Replace item in array with data from included or data, data
-                                        includedObject[prop] = newItem;
-
-                                        // Attach liftime events
-                                        JsonApiHelper.AssignLifeTimeEvents(itemOptions.def());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    */
-
-    /**
-        * @Obsolete
-        * @name NormaliseDataObjectGraph
-        * @desc Convert all data relationshipts to real objects taken from 1 Included data, then data or joiningdata
-        * @param {any} data Json data
-        * @param {JSData.DSResourceDefinition} Resourceconfigurations
-        * @param {Object} id Resource ID, primary key Number or query parameters
-        * @param {JSData.DSConfiguration} options override default configuration options
-        * @returns {string} JsonApi rest service Url
-        * @memberOf JsonApiAdapter
-        */
-    /*
-    private static NormaliseDataObjectGraph(data: any, included: any, jsDataJoiningTables: any, options: SerializationOptions) : Array<any> {
-
-        // This is an array of top level objects with child, object references and included objects
-        var jsDataArray = [];
-
-        if (data) {
-            // Replace data references with included data where available
-            for (var dataType in data) {
-
-                if (data[dataType]) {
-                    for (var dataId in data[dataType]) {
-
-                        if (data[dataType][dataId]) {
-                            var dataObject = data[dataType][dataId];
-
-                            for (var prop in dataObject) {
-
-                                if (DSUTILS.isArray(dataObject[prop])) {
-
-                                    // hasMany Relationship
-                                    DSUTILS.forEach(dataObject[prop], (item: ModelPlaceHolder, index: number, source: Array<ModelPlaceHolder>) => {
-                                        //If included or data or joining data contains the reference we are looking for then use it
-                                        let newItem = included[item.type] ? included[item.type][item.id] :
-                                            (data[item.type] ? data[item.type][item.id] :
-                                                (jsDataJoiningTables[item.type] ? jsDataJoiningTables[item.type][item.id] : null));
-
-                                        if (newItem) {
-                                            //Included item found!!
-                                            // Apply foreign key to js-data object
-                                            if (item.foreignKeyName) {
-                                                newItem[item.foreignKeyName] = item.foreignKeyValue;
-                                            }
-
-                                            // Replace item in array with data from included or data, data
-                                            source[index] = newItem;
-                                        } else {
-                                            // Is is possible to store arrays in js-data that are not related items?
-                                            if (item.constructor === ModelPlaceHolder) {
-
-                                                // Replace item in array with plain object, but with Primary key or any foreign keys set
-                                                var itemOptions = options.getResource(item.type);
-
-                                                let metaData = new MetaData(item.type);
-                                                metaData.isJsonApiReference = true;
-
-                                                let newItem = <any>{};
-                                                newItem[JSONAPI_META] = metaData;
-                                                newItem[itemOptions.idAttribute] = item.id;
-
-                                                // Apply foreign key to js-data object 
-                                                if (item.foreignKeyName) {
-                                                    newItem[item.foreignKeyName] = item.foreignKeyValue;
-                                                }
-
-                                                // Replace item in array with data from included or data, data
-                                                source[index] = newItem;
-
-                                                // Attach liftime events
-                                                JsonApiHelper.AssignLifeTimeEvents(itemOptions.def());
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    // hasOne or parent Relationship
-                                    if (dataObject[prop].constructor === ModelPlaceHolder) {
-                                        var item: ModelPlaceHolder = dataObject[prop];
-                                        let newItem = included[item.type] ? included[item.type][item.id] : (data[item.type] ? data[item.type][item.id] : null);
-                                        if (newItem) {
-                                            //Included item found!!
-                                            // Apply foreign key to js-data object 
-                                            if (item.foreignKeyName) {
-                                                newItem[item.foreignKeyName] = item.foreignKeyValue;
-                                            }
-
-                                            // Replace item in array with data from included or data, data
-                                            dataObject[prop] = newItem;
-                                        } else {
-                                            // Replace item in array with plain object, but with Primary key or any foreign keys set
-                                            var itemOptions = options.getResource(item.type);
-
-                                            let metaData = new MetaData(item.type);
-                                            metaData.isJsonApiReference = true;
-
-                                            let newItem = <any>{};
-                                            newItem[JSONAPI_META] = metaData;
-                                            newItem[itemOptions.idAttribute] = item.id;
-
-                                            // Apply foreign key to js-data object 
-                                            if (item.foreignKeyName) {
-                                                newItem[item.foreignKeyName] = item.foreignKeyValue;
-                                            }
-
-                                            // Replace item in array with data from included or data, data
-                                            dataObject[prop] = newItem;
-
-                                            // Attach liftime events
-                                            JsonApiHelper.AssignLifeTimeEvents(itemOptions.def());
-                                        }
-                                    }
-                                }
-                            }
-
-                            jsDataArray.push(dataObject);
-                        }
-                    }
-                }
-            }
-        }
-        return jsDataArray;
-    }
-    */
 
     private static CreateErrorResponse(title: string, detail: string): JsonApi.JsonApiRequest {
         var response = new JsonApi.JsonApiRequest();
@@ -1101,7 +898,7 @@ export class JsonApiHelper {
 
     // Convert a JsonApi response into an object graph that can be used by js-data
     // One of the main conversions reqired here is to add in ParentIds to child objects so that js-data toMany and toOne relationships work correctly
-    private static DeserializeJsonApiData(options: SerializationOptions, data: JsonApi.JsonApiData, joinData : any): Object {
+    private static DeserializeJsonApiData(options: SerializationOptions, data: JsonApi.JsonApiData, joinData: any): Object {
         if (!options) {
             throw new Error('Missing Serialization Options, indicates possible missing jsData resource: ' + data.type);
         }
@@ -1188,7 +985,7 @@ export class JsonApiHelper {
                             // So we will need to attach joining data to the field before returning it
                             // We can calculate id as the combination of both foreign keys
                             //Create an instance of the joining table.
-                            joinTableFactory = function(foreignRecord: JsonApi.JsonApiData, relationshipLink: string) {
+                            joinTableFactory = function (foreignRecord: JsonApi.JsonApiData, relationshipLink: string) {
 
                                 // Compare typenames in order to determine order to combine pk vales.
                                 // Any algorithum that results in the same value regardless of the order will do here
@@ -1299,32 +1096,32 @@ export class JsonApiHelper {
                     if (DSUTILS.isArray(relationship.data)) {
 
                         var relatedItems = new Array<Object>();
-                            DSUTILS.forEach(relationship.data, (item: JsonApi.JsonApiData) => {
+                        DSUTILS.forEach(relationship.data, (item: JsonApi.JsonApiData) => {
 
-                                if (joinTableFactory == null) {
+                            if (joinTableFactory == null) {
 
-                                    var id = item.id;
-                                    var type = item.type;
+                                var id = item.id;
+                                var type = item.type;
 
-                                    localKeysList.push(id);
+                                localKeysList.push(id);
 
-                                    let relatedItem = new ModelPlaceHolder(type, id);
-                                    if (relationshipDef.foreignKey) {
-                                        relatedItem.WithForeignKey(foreignKey, data.id, data.type);
-                                    }
-
-                                    relatedItems.push(relatedItem);
-                                } else {
-                                    // This is part of a manyToMany relationship
-                                    // This new joinItem needs to be added to the main collection of objets so that in the next pass where we resolve 
-                                    // ModelPlaceHolders it will be picked up
-                                    let relatedItem = joinTableFactory(item, relationship.FindLinkType('self'));
-
-                                    localKeysList.push(id);
-
-                                    relatedItems.push(relatedItem);
+                                let relatedItem = new ModelPlaceHolder(type, id);
+                                if (relationshipDef.foreignKey) {
+                                    relatedItem.WithForeignKey(foreignKey, data.id, data.type);
                                 }
-                            });
+
+                                relatedItems.push(relatedItem);
+                            } else {
+                                // This is part of a manyToMany relationship
+                                // This new joinItem needs to be added to the main collection of objets so that in the next pass where we resolve 
+                                // ModelPlaceHolders it will be picked up
+                                let relatedItem = joinTableFactory(item, relationship.FindLinkType('self'));
+
+                                localKeysList.push(id);
+
+                                relatedItems.push(relatedItem);
+                            }
+                        });
 
                         // Store related local items for toMany relationship
                         fields[localField] = relatedItems;
@@ -1518,7 +1315,7 @@ export class JsonApiHelper {
     };
 
 
-    private static beforeUpdateJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any, cb: (err: Error, data: any) => void): void  {
+    private static beforeUpdateJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any, cb: (err: Error, data: any) => void): void {
         var dataList = DSUTILS.isArray(items) ? items : [items];
         DSUTILS.forEach<any>(dataList, (data: any) => {
             // Merge a json api reference with a fully populated resource that has been previously retrieved
@@ -1537,6 +1334,8 @@ export class JsonApiHelper {
         resource.afterInject = JsonApiHelper.beforeInjectJsonApiData;
         resource.beforeUpdate = JsonApiHelper.beforeUpdateJsonApiData;
     }
+}
+
 
     /* Expreimental !!
     // This is where the magic of relations happens.
@@ -1665,4 +1464,3 @@ export class JsonApiHelper {
         });
     }
     */
-}

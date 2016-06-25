@@ -1,15 +1,17 @@
 {
   "name": "js-data-jsonapi",
   "description": "JsonApi adapter for js-data.",
+  "main": "./dist/js-data-jsonapi.js",
   "homepage": "https://github.com/blairallegrotech/js-data-jsonapi",
   "repository": {
     "type": "git",
     "url": "https://github.com/blairallegrotech/js-data-jsonapi.git"
   },
   "author": {
-    "name": "Blair Jacobs"    
+    "name": "Blair Jacobs"
   },
-  "main": "./dist/js-data-jsonapi.js",
+  "license": "MIT",
+  
   "ignore": [
     ".idea/",
     ".*",
@@ -33,7 +35,7 @@
     "karma.start.js"
   ],
   "dependencies": {
-    "js-data": ">=2.0.0",
-    "js-data-http": ">=2.0.0"
+   "js-data": "^2.8.2 <3",
+   "js-data-http": "^2.1.2 <3"
   }
 }
