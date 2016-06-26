@@ -1,7 +1,7 @@
 ﻿﻿#js-data-jsonapi
 
-[![npm version](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/js-data-jsonapi)
-[![npm downloads](https://img.shields.io/npm/dm/localeval.svg)](https://www.npmjs.com/package/js-data-jsonapi)
+[![npm version](https://img.shields.io/npm/v/js-data-jsonapi.svg)](https://www.npmjs.com/package/js-data-jsonapi)
+[![npm downloads](https://img.shields.io/npm/dm/js-data-jsonapi.svg)](https://www.npmjs.com/package/js-data-jsonapi)
 
 
 ###JsonApi Adapter for [js-data](http://www.js-data.io) 
