@@ -1,5 +1,9 @@
 ﻿﻿#js-data-jsonapi
 
+[![npm version](https://img.shields.io/npm/v/npm.svg)](https://www.npmjs.com/package/js-data-jsonapi)
+[![npm downloads](https://img.shields.io/npm/dm/localeval.svg)](https://www.npmjs.com/package/js-data-jsonapi)
+
+
 ###JsonApi Adapter for [js-data](http://www.js-data.io) 
 This adapter implements the [JsonApi Protocol](http://jsonapi.org/) and ties it to a js-data data store.
 
