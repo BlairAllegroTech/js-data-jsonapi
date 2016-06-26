@@ -41,8 +41,8 @@
     "linter": "npm run tslint",
     "build": "npm run tslint && npm run compile && npm run bundle && npm run min && npm run version && npm run banner",
     "karma": "karma start",
-    "test": "cls && npm run build && npm run karma",
-    "ci": "npm test && npm run gzip && cat ./coverage/PhantomJS*/lcov.info | coveralls || true && cat ./coverage/PhantomJS*/lcov.info | codacy-coverage || true"
+    "test": "npm run build && npm run karma",
+    "ci": "npm test && cat ./coverage/PhantomJS*/lcov.info | coveralls || true"
   },
   "dependencies": {
     "js-data": "^2.8.2 <3",
