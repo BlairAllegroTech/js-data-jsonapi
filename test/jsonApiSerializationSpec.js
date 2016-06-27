@@ -5,10 +5,12 @@
 
         beforeEach(function () {
             testData.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
-            testData.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('testuser')
-            .WithId('2')
-            .WithAttribute('author', 'John')
-            .WithAttribute('age', 31));
+            testData.jsonApiData.WithData(
+                new DSJsonApiAdapter.JsonApi.JsonApiData('testuser')
+                    .WithId('2')
+                    .WithAttribute('author', 'John')
+                    .WithAttribute('age', 31));
+
             testData.model = [{ Id: '2', author: 'John', age: 31}]; //ISMODEL: true, type: 'testuser'
         });
         
@@ -157,4 +159,55 @@
         });
     });
 
+    describe('Attributes Values', function () {
+        it('should deserialize Json Data when attributes contain null values', function () {
+            var _this = this;
+            
+            var testData = {};
+            testData.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
+            testData.jsonApiData.WithData(
+                new DSJsonApiAdapter.JsonApi.JsonApiData('testuser')
+                    .WithId('2')
+                    .WithAttribute('author', 'John')
+                    .WithAttribute('age', 31)
+                    .WithAttribute('NullValue', null));
+            
+            testData.model = [{ Id: '2', author: 'John', age: 31 }]; //ISMODEL: true, type: 'testuser'
+            
+            var TestUser = datastore.defineResource({
+                name: 'testuser',
+                idAttribute: 'id'
+            });
+            
+            
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length);
+                assert.equal(_this.requests[0].url, 'api/testuser');
+                assert.equal(_this.requests[0].method, 'POST');
+                assert.isDefined(_this.requests[0].requestHeaders, 'Request Contains headers');
+                assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
+                assert.include(_this.requests[0].requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
+                assert.equal(_this.requests[0].requestBody, DSUtils.toJson({
+                    data: {
+                        //id: '', 
+                        type: 'testuser', 
+                        attributes: { author: 'John', age: 32 }, 
+                        links: {}, 
+                        relationships: {}
+                    }
+                }), 'Json data serialized to jsonApi data correctly');
+                
+                var json = JSON.stringify(testData.jsonApiData);
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(testData.jsonApiData));
+            }, 30);
+            
+            return dsHttpAdapter.create(TestUser, { author: 'John', age: 32 }, { basePath: 'api' }).then(function (data) {
+                assert.isDefined(data, 'Data should be returned');
+                assert.isDefined(data[0], 'Data should be returned in first indexof array')
+                assert.isDefined(data[0].NullValue, 'NullValue deserialised');
+                assert.equal(data[0].NullValue, null, 'Null value set to null');
+
+            });
+        });
+    });
 });

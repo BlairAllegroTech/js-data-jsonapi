@@ -585,7 +585,7 @@ export class JsonApiHelper {
                     if (meta.incrementReferenceCount() === 1) {
                         return newItem;
                     } else {
-                        return null;
+                        return undefined;
                     }
                 } else {
 
@@ -618,7 +618,7 @@ export class JsonApiHelper {
 
         var toOnePlaceHolderVisitor = (data: Object, localField: string, opt: SerializationOptions): any => {
             var val = data[localField];
-            if (val.constructor === ModelPlaceHolder) {
+            if (val !== null && val.constructor === ModelPlaceHolder) {
                 let itemPlaceHolder = <ModelPlaceHolder>val;
 
                 //If included or data or joining data contains the reference we are looking for then use it
@@ -644,7 +644,7 @@ export class JsonApiHelper {
                                 data[relation.localKey] = itemPlaceHolder.id;
                             }
                         }
-                        return null;
+                        return undefined;
                     }
                 } else {
                     //This item dosn't exist so create a model reference to it
@@ -734,14 +734,10 @@ export class JsonApiHelper {
                                 if (DSUTILS.isArray(dataObject[prop])) {
 
                                     // hasMany Relationship
-                                    // With many relations we can set the foreign key and delete the object to prevent circularrelations
+                                    // With many relations we can set the foreign key and delete the object to prevent circular relations
                                     DSUTILS.forEach(dataObject[prop], (item: ModelPlaceHolder, index: number, source: Array<ModelPlaceHolder>) => {
                                         var result = toManyVisitor(item);
-                                        if (result) {
-                                            source[index] = result;
-                                        } else {
-                                            source[index] = undefined;
-                                        }
+                                        source[index] = result;
                                     });
 
                                     // Remove un-used array items
@@ -763,7 +759,7 @@ export class JsonApiHelper {
 
                                     // Has one relations we can set the foreign key and remove the object
                                     var result = toOneVisitor(dataObject, prop, opt);
-                                    if (result) {
+                                    if (result !== undefined) {
                                         dataObject[prop] = result;
                                     } else {
                                         delete dataObject[prop];
