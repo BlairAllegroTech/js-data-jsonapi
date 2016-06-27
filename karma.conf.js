@@ -65,7 +65,7 @@ module.exports = function (config) {
             { pattern: 'examples/**/*.json', watched: true, served: true, included: false }
         ],
         
-        reporters: ['progress', 'coverage', 'junit', 'html'],
+        reporters: ['dots', 'progress', 'coverage', 'junit', 'html'],
         
         preprocessors: {
             'dist/js-data-jsonapi.js': ['coverage']
