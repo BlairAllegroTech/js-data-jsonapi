@@ -1,7 +1,8 @@
 ﻿﻿#js-data-jsonapi
 
-[![npm version](https://img.shields.io/npm/v/js-data-jsonapi.svg)](https://www.npmjs.com/package/js-data-jsonapi)
-[![npm downloads](https://img.shields.io/npm/dm/js-data-jsonapi.svg)](https://www.npmjs.com/package/js-data-jsonapi)
+[![npm version][npm_v_badge]][npm_link]
+[![npm downloads][npm_dwn_badge]][npm_link]
+[![cicleci build][circleci_badge]][circleci_link]
 
 ###JsonApi Adapter for [js-data](http://www.js-data.io) 
 This adapter implements the [JsonApi Protocol](http://jsonapi.org/) and ties it to a js-data data store.
@@ -85,3 +86,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+[npm_link]: https://www.npmjs.com/package/js-data-jsonapi
+[npm_v_badge]: https://img.shields.io/npm/v/js-data-jsonapi.svg
+[npm_dwn_badge]: https://img.shields.io/npm/dm/js-data-jsonapi.svg
+[circleci_link]: https://circleci.com/gh/BlairAllegroTech/js-data-jsonapi/tree/master
+[circleci_badge]: https://img.shields.io/circleci/project/BlairAllegroTech/js-data-jsonapi/master.svg?style=flat

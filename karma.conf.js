@@ -13,11 +13,12 @@ var customLaunchers = {
     }
 };
 
-var singleRun = false;
+var singleRun = true;
 var browsers = ['PhantomJS'];
 //browsers = ['Chrome'];
 //singleRun = (false && browsers[0] === 'PhantomJS');
-    
+
+// If we are configured for Browser stack add additional browsers
 if (
 	process.env.BROWSERSTACK_USERNAME &&
 	process.env.BROWSERSTACK_ACCESS_KEY
@@ -67,7 +68,7 @@ module.exports = function (config) {
         reporters: ['progress', 'coverage', 'junit', 'html'],
         
         preprocessors: {
-            //'dist/js-data-jsonapi.js': ['coverage']
+            'dist/js-data-jsonapi.js': ['coverage']
         },
         
         // optionally, configure the reporter
