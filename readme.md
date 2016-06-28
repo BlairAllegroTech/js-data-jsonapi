@@ -54,7 +54,7 @@ store.registerAdapter('jsonApi', adapter, { default: true });
 ```
 
 ### Version
-0.0.0-alpha.6
+0.0.0-alpha.8
 
 ### Tech
 
@@ -91,4 +91,4 @@ SOFTWARE.
 [npm_v_badge]: https://img.shields.io/npm/v/js-data-jsonapi.svg
 [npm_dwn_badge]: https://img.shields.io/npm/dm/js-data-jsonapi.svg
 [circleci_link]: https://circleci.com/gh/BlairAllegroTech/js-data-jsonapi/tree/master
-[circleci_badge]: https://img.shields.io/circleci/project/BlairAllegroTech/js-data-jsonapi/master.svg?style=flat
+[circleci_badge]: https://circleci.com/gh/BlairAllegroTech/js-data-jsonapi.svg?style=shield
