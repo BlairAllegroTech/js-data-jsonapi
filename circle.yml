@@ -10,3 +10,4 @@ general:
   artifacts:
     - "dist"
     - "coverage"
+    - "karma_html"
