@@ -122,16 +122,25 @@ export class JsonApiData {
 
 export class JsonApiRelationship {
     links: { [key: string]: MetaLink };
-    data: JsonApiData[];
+    data: JsonApiData[] | JsonApiData;
     meta: Meta;
 
-    constructor() {
+    constructor(isArray: boolean) {
         this.links = {};
-        this.data = new Array<JsonApiData>();
+
+        if (isArray === true) {
+            this.data = new Array<JsonApiData>();
+        } else {
+            this.data = null;
+        }
     }
 
     WithData(type: string, id: string): JsonApiRelationship {
-        this.data.push(new JsonApiData(type).WithId(id));
+        if (Array.isArray(this.data)) {
+            (<JsonApiData[]>this.data).push(new JsonApiData(type).WithId(id));
+        } else {
+            this.data = new JsonApiData(type).WithId(id);
+        }
         return this;
     }
 

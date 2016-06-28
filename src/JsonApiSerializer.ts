@@ -219,6 +219,8 @@ export class SerializationOptions {
         DSUTILS.forEach(relations, (relation: JSData.RelationDefinition) => {
             if (relation.localField === localFieldName) {
                 match = relation;
+
+                // Exit the for loop
                 return false;
             }
         });
@@ -265,6 +267,7 @@ export class SerializationOptions {
             let relationlower = relationType.toLowerCase();
             let matchIndex = -1;
             let relationList = this.resourceDef['relationlist'];
+
             DSUTILS.forEach<JSData.RelationDefinition>(relationList, (relation: JSData.RelationDefinition, index: number) => {
                 if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
                     if (relationlower === relation.relation) {
@@ -488,7 +491,8 @@ export class JsonApiHelper {
                     for (var relation in item.relationships) {
                         if (item.relationships[relation]) {
                             this.NormaliseLinkFormat(item.relationships[relation].links);
-                            item.relationships[relation] = DSUTILS.deepMixIn(new JsonApi.JsonApiRelationship(), item.relationships[relation]);
+                            var isArray = DSUTILS.isArray( item.relationships[relation].data );
+                            item.relationships[relation] = DSUTILS.deepMixIn(new JsonApi.JsonApiRelationship(isArray), item.relationships[relation]);
                         }
                     }
 
@@ -506,7 +510,8 @@ export class JsonApiHelper {
                     for (var relation in item.relationships) {
                         if (item.relationships[relation]) {
                             this.NormaliseLinkFormat(item.relationships[relation].links);
-                            item.relationships[relation] = DSUTILS.deepMixIn(new JsonApi.JsonApiRelationship(), item.relationships[relation]);
+                            var isArray = DSUTILS.isArray(item.relationships[relation].data);
+                            item.relationships[relation] = DSUTILS.deepMixIn(new JsonApi.JsonApiRelationship(isArray), item.relationships[relation]);
                         }
                     }
                     // Add JsonApiData
@@ -854,7 +859,7 @@ export class JsonApiHelper {
                         var resourceDef = options.getResource(childRelation.relation);
 
                         //This is a relationship so add data as relationsship as apposed to inling data structure                        
-                        var relationship = new JsonApi.JsonApiRelationship();
+                        var relationship = new JsonApi.JsonApiRelationship(true);
                         DSUTILS.forEach(contents[prop], (item: any) => {
                             var type = resourceDef.type;
                             var id = item[resourceDef.idAttribute];
@@ -873,8 +878,8 @@ export class JsonApiHelper {
                     var type = childRelation.type;
                     var id = contents[resourceDef.idAttribute];
 
-                    var relation = new JsonApi.JsonApiRelationship();
-                    relation.data = <any>new JsonApi.JsonApiData(type)
+                    var relation = new JsonApi.JsonApiRelationship(false);
+                    relation.data = new JsonApi.JsonApiData(type)
                         .WithId(id);
 
                     if (childRelation.type === jsDataHasMany) {
@@ -929,7 +934,11 @@ export class JsonApiHelper {
 
                 // Relation name should be the local field name of a relationship.
                 var relationship = data.relationships[relationName];
-                if (relationship.data) {
+
+                // Data is truthy and is not an array or if an array is not empty
+                var hasData = (relationship.data && (!DSUTILS.isArray(relationship.data) || (DSUTILS.isArray(relationship.data) && (<JsonApi.JsonApiData[]>relationship.data).length > 0)));
+
+                if (hasData) {
                     var joinTableFactory = null;
                     // Gets type from data
                     var childRelationType = DSUTILS.isArray(relationship.data) ? relationship.data[0].type : (<JsonApi.JsonApiData>(<any>relationship.data)).type;
@@ -937,7 +946,7 @@ export class JsonApiHelper {
 
                     // EXPERIMENTAL MANY TO MANY RELATIONSHIPS SPECIAL HANDLEING
                     // NOTE : If this children are contained in an array and the relationship contains a self link meaning we can manipulate the relationship
-                    // independant of the data then this is a manyToMAny relationship and should use a joining table                    
+                    // independant of the data then this is a manyToMAny relationship and should use a joining table
                     if (!relationshipDef) {
                         // We could not find the relationship for this data, so check meta data to see if we are using a joining 
                         // table to manage this type
@@ -1092,7 +1101,7 @@ export class JsonApiHelper {
                     if (DSUTILS.isArray(relationship.data)) {
 
                         var relatedItems = new Array<Object>();
-                        DSUTILS.forEach(relationship.data, (item: JsonApi.JsonApiData) => {
+                        DSUTILS.forEach((<JsonApi.JsonApiData[]>relationship.data), (item: JsonApi.JsonApiData) => {
 
                             if (joinTableFactory == null) {
 
@@ -1155,7 +1164,13 @@ export class JsonApiHelper {
                             fields[(relationshipDef.localKeys || relationshipDef.localKey)] = localKeysList; //Set localKeys on Parent
                         }
                     }
+                } else {
+                    // When a relationship has no data we must still return it to js-data so that the data store is updated.
+                    // E.g. If there previously existed a relationship then we need to inform js-data's data store to break this relationship!
+
+                    //Here the relationship data will be set to null or and empty array
                 }
+
             }
         }
 

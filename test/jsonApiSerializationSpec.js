@@ -210,4 +210,177 @@
             });
         });
     });
+
+    describe('To Many Relationships', function () {
+        var ds;
+        var testData = { config: {} };
+        
+        beforeEach(function () {
+            //Create js-data
+            ds = new JSData.DS();
+            
+            // Configure js-data resources
+            testData.config.Article = ds.defineResource({
+                name: 'article',
+                idAttribute: 'id',
+                relations: {
+                    
+                    hasOne: {
+                        author: {
+                            localField: 'author',
+                            foreignKey: 'articleid'
+                        }
+                    }
+                }
+            });
+            
+            testData.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+                relations: {
+                    belongsTo: {
+                        article: {
+                            localField: 'article',
+                            localKey: 'articleid'
+                        }
+                    }
+                }
+            });
+            
+            var author = { id: 1, name: 'Bob', articleid: 2 };
+            var article = { id: 2, title: 'js-data' }; //, authorid: 1
+            article.author = author;
+            
+            testData.config.Article.inject(article);
+        });
+        
+
+        it('should deserialize empty to many relationships and js-data should update to remove previous existing relationship', function () {
+            var _this = this;
+            
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length);
+                assert.equal(_this.requests[0].url, 'api/author/1');
+                assert.equal(_this.requests[0].method, 'PUT');
+                
+                // NOTE the 
+                var req = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
+                var articleToOneRelation = new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
+                    .WithLink('related', 'api/author/1/article');
+                
+                req.WithData(
+                    new DSJsonApiAdapter.JsonApi.JsonApiData('author')
+                        .WithId('1')
+                        .WithRelationship("article", articleToOneRelation)
+                );
+                
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(req));
+            }, 30);
+            
+            return dsHttpAdapter.update(testData.config.Author, '1', { id: '1', name: 'John' }, { basePath: 'api' }).then(function (data) {
+                // We are not testing meta data yet
+                ignoreMetaData(data);
+                
+                assert.equal(data[0].id, 1, 'check id');
+                
+                // TODO : In the future we need to break any existing relationship within js-data
+                assert.isUndefined(data[0].article, 'The empty relationship should exist');
+            });  
+        });
+    });
+    
+    describe('To One Relationships, see : http://jsonapi.org/format/#fetching-relationships', function () {
+        var ds;
+        var testData = { config: {} };
+        
+        beforeEach(function () {
+            //Create js-data
+            ds = new JSData.DS();
+
+            // Configure js-data resources
+            testData.config.Article = ds.defineResource({
+                name: 'article',
+                idAttribute: 'id',
+                relations: {
+
+                    hasOne: {
+                        author: {
+                            localField: 'author',
+                            foreignKey: 'articleid'
+                        }
+                    }
+                }
+            });
+            
+            testData.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+                relations: {
+                    belongsTo: {
+                        article: {
+                            localField: 'article',
+                            localKey: 'articleid'
+                        }
+                    }
+                }
+            });
+            
+            var author = { id: 1, name: 'Bob', articleid: 2 };
+            var article = { id: 2, title: 'js-data'}; //, authorid: 1
+            article.author = author;
+            
+            testData.config.Article.inject(article);
+        });
+
+        it('should break js-data existing relationship', function () {
+            var author = testData.config.Author.get(1);
+            var article = testData.config.Article.get(2);
+
+            assert.isDefined(article, 'Article should be in DS');
+            assert.isDefined(author, 'Author should be in DS');
+
+            assert.equal(article.author, author, 'article.author same as author');
+            assert.equal(author.article, article, 'author.article same as article');
+            
+            author.articleid = null;
+
+            assert.isUndefined(article.author, 'article.author undefined');
+            assert.isUndefined(author.article, 'author.article undefined');
+
+        });
+        
+        it('should deserialize empty(null) to one relationships and js-data should update to remove previous existing relationship', function () {
+            var _this = this;
+            
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length);
+                assert.equal(_this.requests[0].url, 'api/author/1');
+                assert.equal(_this.requests[0].method, 'PUT');
+                
+                // NOTE the 
+                var req = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
+                var articleToOneRelation = new DSJsonApiAdapter.JsonApi.JsonApiRelationship(false)
+                    .WithLink('related', 'api/author/1/article');
+
+                req.WithData(
+                    new DSJsonApiAdapter.JsonApi.JsonApiData('author')
+                        .WithId('1')
+                        .WithRelationship("article", articleToOneRelation)
+                );
+
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(req));
+            }, 30);
+                
+            return dsHttpAdapter.update(testData.config.Author, '1', {id:'1', name: 'John'}, { basePath: 'api' }).then(function (data) {
+                // We are not testing meta data yet
+                ignoreMetaData(data);
+                
+                assert.equal(data[0].id, 1, 'check id');
+                
+                // TODO : In the future we need to break any existing relationship within js-data
+                assert.isUndefined(data[0].article, 'The empty relationship should exist');
+            });  
+
+        });
+    });
 });
