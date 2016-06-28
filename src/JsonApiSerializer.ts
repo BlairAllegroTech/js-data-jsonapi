@@ -1337,7 +1337,9 @@ export class JsonApiHelper {
             //LogInfo('beforeUpdate called onresource:', [resource.name]);
         });
 
-        cb(null, items);
+        if (cb) {
+            cb(null, items);
+        }
     };
 
     public static AssignLifeTimeEvents(resource: JSData.DSResourceDefinitionConfiguration) {

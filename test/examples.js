@@ -9,7 +9,7 @@
         var dsAdapter = new DSJsonApiAdapter.JsonApiAdapter({
             queryTransform: queryTransform
         });
-        ds.registerAdapter('jsonApi', dsAdapter, { default: true });        
+        ds.registerAdapter('jsonApi', dsAdapter, { default: true });
     });
     
 

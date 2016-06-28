@@ -347,7 +347,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     public update(config: JSData.DSResourceDefinition<any>, id: string | number, attrs: Object, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
         let idString = id.toString();
         if (attrs[config.idAttribute]) {
-            if (attrs[config.idAttribute] !== idString) {
+            if (attrs[config.idAttribute].toString() !== idString) {
                 throw new Error(
                     'Json Api update expected supplied id and the primary key attribute "' + config.idAttribute +
                     '" to be the same, you may have called update on the wrong id?');
