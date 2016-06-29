@@ -139,20 +139,23 @@ describe('Update Tests', function () {
                 _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response));
             }, 30);
 
-            testData.config.Author.findAll().then(function (data) { 
+            return testData.config.Author.findAll().then(function (data) { 
                 setTimeout(function () {
                     assert.equal(2, _this.requests.length);
                     assert.equal(_this.requests[1].url, 'author/1');
                     assert.equal(_this.requests[1].method, 'PUT');
 
-                    _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, _this.requests[1].requestBody);
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, _this.requests[1].requestBody);
                 }, 30);
             
             
                 var author = testData.config.Author.get(1);
                 assert.isDefined(author, 'Author should be in DS');
                 author.name = 'New Author';
-                return ds.save('author', author.id).then(function (data) { });
+                return ds.save('author', author.id).then(function (data) {
+                    assert.isDefined(data, 'Result Sould exists');
+                    assert.equal(data[0].name, 'New Author');
+                });
             });
         });
     });

@@ -45,7 +45,11 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         //}
 
         // Create base adapter
-        this.adapter = <JSData.DSHttpAdapterExtended> (new httpAdapter(options));
+        if (options) {
+            this.adapter = <JSData.DSHttpAdapterExtended>(options.adapter);
+        }
+
+        this.adapter = this.adapter || <JSData.DSHttpAdapterExtended>(new httpAdapter(options));
 
         // Override default get path implementation
         this.adapterGetPath = this.adapter.getPath;

@@ -38,6 +38,7 @@
     // See: https://github.com/js-data/js-data/blob/master/src/utils.js
     interface DSUtil {
         Promise: PromiseLib; //{ <R>(callback: (resolve: (value?: R | Thenable<R>) => void, reject: (error?: any) => void) => void) };
+        promisify: (fn: Function, target: Object) => JSDataPromise<void>;
         deepMixIn: (dest: any, source: any) => any;
         equals: (obj1: any, obj2: any) => boolean;
         _sn: (obj: Object) => boolean;
@@ -53,5 +54,7 @@
         set : (obj: Object, prop: string, value: any) => void;
         contains: (obj1: Object, obj2: Object) => boolean;
         keys: (obj: Object) => any[];
+
+
     }
 }

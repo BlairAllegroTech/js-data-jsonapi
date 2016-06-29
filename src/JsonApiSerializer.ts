@@ -133,6 +133,10 @@ export class SerializationOptions {
     get idAttribute(): string { return this.resourceDef.idAttribute; };
     relationType(): string { return this.resourceDef['type']; };
 
+    constructor(def: JSData.DSResourceDefinitionConfiguration) {
+        this.resourceDef = def;
+    }
+
     private resourceDef: JSData.DSResourceDefinitionConfiguration;
 
     def(): JSData.DSResourceDefinitionConfiguration {
@@ -340,10 +344,6 @@ export class SerializationOptions {
 
     //    return match;
     //}
-
-    constructor(def: JSData.DSResourceDefinitionConfiguration) {
-        this.resourceDef = def;
-    }
 }
 
 class DeSerializeResult {
@@ -356,17 +356,17 @@ class DeSerializeResult {
     }
 }
 
-function LogInfo(message: string, options: any[] = undefined): void {
+function LogInfo(message: string, data: any[] = undefined): void {
     if (console) {
         var c: Console = console;
-        c.log(message, options);
+        c.log(message, data);
     }
 }
 
-function LogWarning(message: string, options: any[] = undefined): void {
+function LogWarning(message: string, data: any[] = undefined): void {
     if (console) {
         var c: Console = console;
-        c.warn(message, options);
+        c.warn(message, data);
     }
 }
 
@@ -1326,8 +1326,9 @@ export class JsonApiHelper {
     };
 
 
-    private static beforeUpdateJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any, cb: (err: Error, data: any) => void): void {
+    private static beforeUpdateJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any, cb?: (err: Error, data: any) => void): void {
         var dataList = DSUTILS.isArray(items) ? items : [items];
+
         DSUTILS.forEach<any>(dataList, (data: any) => {
             // Merge a json api reference with a fully populated resource that has been previously retrieved
 
@@ -1339,6 +1340,10 @@ export class JsonApiHelper {
 
         if (cb) {
             cb(null, items);
+        } else {
+            // Synchronous call
+            // LogInfo('beforeUpdateJsonApiData called without callback', [resource, items]);
+            return items;
         }
     };
 

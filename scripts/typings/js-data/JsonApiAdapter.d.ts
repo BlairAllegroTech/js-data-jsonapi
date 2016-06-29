@@ -3,13 +3,17 @@ declare module JsonApiAdapter {
 
     export interface DSJsonApiAdapterOptions extends JSData.DSHttpAdapterOptions {
         log?: (message?: any, ...optionalParams: any[]) => void;
-        error?: (message?: any, ...optionalParams: any[]) => void;        
+        error?: (message?: any, ...optionalParams: any[]) => void;
 
         http?: any;
-        headers: any;
+        headers?: any;
 
         // If required pass json api specific options on here
-        jsonApi? : any
+        jsonApi?: any,
+
+        // We can pass in an existing adapter rather than creating internally.
+        // This can work better with js-data-angular
+        adapter?: JSData.DSHttpAdapter
     }
 
     export interface DSJsonApiAdapter extends JSData.IDSAdapter {
