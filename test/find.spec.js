@@ -240,4 +240,42 @@
             });
         });
     });
+
+    it('should make a GET request and correctly store JsonApi Request links in meta data', function () {
+        var _this = this;
+
+        setTimeout(function () {
+            assert.equal(1, _this.requests.length);
+            assert.equal(_this.requests[0].url, 'api/container/1');
+            assert.equal(_this.requests[0].method, 'GET');
+            assert.isDefined(_this.requests[0].requestHeaders);
+            assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+            
+            var request = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+            .WithData(
+                new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                    .WithId('1')
+                    .WithLink('self', 'api/container/1')
+                    .WithLink('login', 'api/token')
+                    .WithRelationship('containedposts', 
+                        new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
+                            .WithData('posts', '5')
+                )
+            );
+
+            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(request));
+        }, 30);
+        
+        return UserContainer.find(1).then(function (data) {
+            var container = UserContainer.get(1);
+            var meta = DSJsonApiAdapter.TryGetMetaData(container);
+            
+            assert.isDefined(meta, 'Should have meta data');
+            assert.isDefined(container, 'should find UserContainer reource 1 in datastore');
+
+            assert.isFalse(container.IsJsonApiReference, 'Should be full object');
+            assert.isDefined(meta.links.login, 'should have LOGIN link');
+        });
+
+    });
 });

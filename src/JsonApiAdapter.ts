@@ -175,7 +175,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                     if (parentItem) {
                         var metaData = Helper.MetaData.TryGetMetaData(parentItem);
                         if (metaData) {
-                            var relationLink = metaData.relatedLink(parentChildRelation.localField); //resourceConfig.name,
+                            var relationLink = metaData.getRelationshipLink(parentChildRelation.localField, Helper.JSONAPI_RELATED_LINK); //resourceConfig.name,
                             if (relationLink) {
                                 (<any>options).params = {};
                                 jsonApiPath = relationLink.url;
@@ -184,12 +184,14 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                     }
                 }
             } else {
-
-                ////TODO : for updates use self link!!
-                //var metaData = Helper.MetaData.TryGetMetaData(item);
-                //if (metaData && metaData.selfLink) {
-                //    jsonApiPath = metaData.selfLink;
-                //}
+                // Only existing objects should have meta data
+                if (method === 'update') {
+                    //TODO : for updates use self link!!
+                    var metaData = Helper.MetaData.TryGetMetaData(item);
+                    if (metaData && metaData.selfLink) {
+                        jsonApiPath = metaData.selfLink;
+                    }
+                }
             }
         }
 
@@ -406,6 +408,10 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         );
     }
 }
+
+export function TryGetMetaData(obj: Object): JsonApiAdapter.JsonApiMetaData {
+    return Helper.MetaData.TryGetMetaData(obj);
+};
 
 export var version = {
     full: '<%= pkg.version %>',

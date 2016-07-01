@@ -255,7 +255,7 @@ beforeEach(function () {
         .WithData(
         new DSJsonApiAdapter.JsonApi.JsonApiData('container')
                 .WithId('1')
-                .WithLink('self', '/container/1')
+                .WithLink('self', 'api/container/1')
                 .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
                         .WithData('posts', '5')

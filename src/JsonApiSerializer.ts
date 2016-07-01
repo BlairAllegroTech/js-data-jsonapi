@@ -11,10 +11,9 @@ import JsonApi = require('./JsonApi');
 //const ISMODEL: string = "ISMODEL"; //Used during serialization to transform relationships
 //const ISMODEL_REFERENCE: string = "ISMODEL_REFERENCE"; //Used during serialization to transform relationships   
 const JSONAPI_META: string = '$_JSONAPIMETA_';
-const JSONAPI_PARENT_LINK: string = 'parent';
 const jsonApiContentType: string = 'application/vnd.api+json';
-const JSONAPI_Related: string = 'related';
-
+export const JSONAPI_RELATED_LINK: string = 'related';
+export const JSONAPI_PARENT_LINK: string = 'parent';
 
 const jsDataBelongsTo : string = 'belongsTo';
 const jsDataHasMany: string = 'hasMany';
@@ -45,6 +44,7 @@ interface IJSDataManyToManyMeta {
 class MetaLinkDataImp implements JsonApiAdapter.MetaLinkData {
     type: string;
     url: string;
+    meta: any;
     constructor(type: string, url: string) {
         this.type = type;
         this.url = url;
@@ -58,6 +58,7 @@ export class MetaData implements JsonApiAdapter.JsonApiMetaData {
     selfLink: string;
     isJsonApiReference: boolean;
     relationships: { [relation: string]: JsonApiAdapter.MetaLink };
+    links: { [link: string]: JsonApiAdapter.MetaLinkData };
     private referenceCount: number;
 
     constructor(type: string) {
@@ -65,17 +66,34 @@ export class MetaData implements JsonApiAdapter.JsonApiMetaData {
         this.selfLink = null;
         this.isJsonApiReference = true;
         this.relationships = {};
+        this.links = {};
         this.referenceCount = 0;
     }
 
+    /**
+        * @name getPath
+        * @desc Override DSHttpAdapter get path to use stored JsonApi self link if available
+        * @param {string} relationName The name or rel attribute of relationship
+        * @param {string} linkType, related, self etc..
+        * @param {string} url Link url
+        * @return {MetaData} this e.g. fluent method 
+        * @memberOf MetaData
+    **/
     WithRelationshipLink(relationName: string, linkType: string, dataType: string, url: string): MetaData {
         this.relationships[relationName] = this.relationships[relationName] || {};
         this.relationships[relationName][linkType] = new MetaLinkDataImp(dataType, url);
         return this;
     }
 
-    relatedLink(relationName: string): JsonApiAdapter.MetaLinkData {
-        return this.getRelationshipLink(relationName, JSONAPI_Related);
+    WithLink(linkName: string, url: string, meta: any): MetaData {
+        var link = new MetaLinkDataImp(linkName, url);
+        link.meta = meta;
+        this.links[linkName] = link;
+        return this;
+    }
+
+    getLinks(linkName: string): JsonApiAdapter.MetaLinkData {
+        return this.links[linkName];
     }
 
     incrementReferenceCount(): number {
@@ -83,7 +101,7 @@ export class MetaData implements JsonApiAdapter.JsonApiMetaData {
         return this.referenceCount;
     }
 
-    private getRelationshipLink(relationName: string, linkType: string): JsonApiAdapter.MetaLinkData {
+    public getRelationshipLink(relationName: string, linkType: string): JsonApiAdapter.MetaLinkData {
         if (this.relationships[relationName]) {
             return this.relationships[relationName][linkType];
         } else {
@@ -475,14 +493,6 @@ export class JsonApiHelper {
 
         // Required data
         if (response.data) {
-            if (response.links) {
-                this.NormaliseLinkFormat(response.links);
-                for (var link in response.links) {
-                    if (response.links[link]) {
-                        newResponse.AddLink(link, response.links[link]);
-                    }
-                }
-            }
 
             if (DSUTILS.isArray(response.included)) {
                 DSUTILS.forEach(response.included, (item: JsonApi.JsonApiData) => {
@@ -520,6 +530,16 @@ export class JsonApiHelper {
             } else {
                 this.NormaliseLinkFormat((<any>response.data).links);
                 newResponse.WithData(DSUTILS.deepMixIn(new JsonApi.JsonApiData(''), <any>response.data));
+            }
+        }
+        if (response.links) {
+            this.NormaliseLinkFormat(response.links);
+
+            // We need somewhere global to store these link!!
+            for (var link in response.links) {
+                if (response.links[link]) {
+                    newResponse.AddLink(link, response.links[link]);
+                }
             }
         }
 
@@ -1064,7 +1084,7 @@ export class JsonApiHelper {
                     } else {
                         // Add relationship to meta data, so that we can use this to lazy load relationship as requiredin the future
                         //metaData.WithRelationshipLink(relationshipDef.relation, 'related', relationship.FindLinkType('related'));
-                        metaData.WithRelationshipLink(relationshipDef.localField, JSONAPI_Related, relationshipDef.relation, relationship.FindLinkType(JSONAPI_Related));
+                        metaData.WithRelationshipLink(relationshipDef.localField, JSONAPI_RELATED_LINK, relationshipDef.relation, relationship.FindLinkType(JSONAPI_RELATED_LINK));
                     }
 
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"
@@ -1174,6 +1194,18 @@ export class JsonApiHelper {
             }
         }
 
+        // Deserialise Arbitary data links into object meta data
+        if (data.links) {
+            this.NormaliseLinkFormat(data.links);
+
+            for (var linkName in data.links) {
+                if (data.links[linkName]) {
+                    var link: JsonApi.MetaLink = data.links[linkName];
+                    metaData.WithLink(linkName, link.href, link.meta);
+                }
+            }
+        }
+
         fields[JSONAPI_META] = metaData;
         return fields;
     }
@@ -1230,11 +1262,7 @@ export class JsonApiHelper {
                 if (links[link]) {
                     let src = links[link];
                     let newLink = new JsonApi.MetaLink(src.href || (<any>src).toString());
-                    newLink.meta = src.meta;
-
-                    //newResponse.WithLink(link, newLink);
-                    //links[link] = DSUTILS.copy(newLink);
-
+                    newLink.meta = DSUTILS.deepMixIn(new JsonApi.Meta(), src.meta);
                     links[link] = newLink;
                 }
             }
@@ -1292,7 +1320,7 @@ export class JsonApiHelper {
 
                             if (containsReferences === true || this[relationName] === undefined) {
                                 // Get related link for relationship
-                                var relationshipMeta = meta.relatedLink(relationName);
+                                var relationshipMeta = meta.getRelationshipLink(relationName, JSONAPI_RELATED_LINK);
 
                                 if (relationshipMeta) {
                                     var parentResourceType = new SerializationOptions(resource);

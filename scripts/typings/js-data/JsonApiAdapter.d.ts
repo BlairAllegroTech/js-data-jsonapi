@@ -52,6 +52,7 @@ declare module JsonApiAdapter {
         isJsonApiReference: boolean;
         selfLink: string;
         relationships: { [relation: string]: MetaLink };
-        relatedLink(relationName: string): JsonApiAdapter.MetaLinkData;
+        getLinks(linkName:string): MetaLinkData ;
+        getRelationshipLink(relationName: string, linkType:string): JsonApiAdapter.MetaLinkData;
     }
 }
