@@ -261,7 +261,7 @@
             setTimeout(function () {
                 assert.equal(1, _this.requests.length);
                 assert.equal(_this.requests[0].url, 'api/author/1');
-                assert.equal(_this.requests[0].method, 'PUT');
+                assert.equal(_this.requests[0].method, 'PATCH');
                 
                 // NOTE the 
                 var req = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
@@ -355,7 +355,7 @@
             setTimeout(function () {
                 assert.equal(1, _this.requests.length);
                 assert.equal(_this.requests[0].url, 'api/author/1');
-                assert.equal(_this.requests[0].method, 'PUT');
+                assert.equal(_this.requests[0].method, 'PATCH');
                 
                 // NOTE the 
                 var req = new DSJsonApiAdapter.JsonApi.JsonApiRequest();

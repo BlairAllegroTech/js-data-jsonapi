@@ -55,6 +55,8 @@
         contains: (obj1: Object, obj2: Object) => boolean;
         keys: (obj: Object) => any[];
 
+        fillIn: <T>(target:T, obj:any) => T;
+
 
     }
 }

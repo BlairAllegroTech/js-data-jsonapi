@@ -1298,13 +1298,12 @@ export class JsonApiHelper {
                                     var parentResourceType = new SerializationOptions(resource);
                                     var relation = parentResourceType.getChildRelationWithLocalField(relationshipMeta.type, relationName);
                                     var childResource = parentResourceType.getResource(relation.relation);
-                                    var config = {};
-                                    config[relation.foreignKey] = this.Id;
 
-                                    //{ containerid: this.Id }
+                                    var params = { jsonApi: { jsonApiPath: relationshipMeta.url}};
+                                    params[relation.foreignKey] = this.Id;
+
                                     var operationConfig: JSDataLib.DSAdapterOperationConfiguration = { bypassCache: true };
-                                    config['jsonApi'] = { jsonApiPath: relationshipMeta.url };
-                                    return (<JSData.DSResourceDefinition<any>>childResource.def()).findAll(config, operationConfig);
+                                    return (<JSData.DSResourceDefinition<any>>childResource.def()).findAll(params, operationConfig);
                                 }
                             } else {
                                 // Resolve promise synchronously!!

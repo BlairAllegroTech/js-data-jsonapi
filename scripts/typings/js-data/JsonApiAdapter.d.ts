@@ -1,15 +1,27 @@
 ﻿
 declare module JsonApiAdapter {
 
+    export interface DSJsonApiOptions {
+
+        // JsonApi does not support PUT semantics, so use PATCH by default
+        usePATCH?: boolean;
+
+        // Do not set globally, used to override the url for a resource
+        // This is set internally using the self link of objects or relationships
+        jsonApiPath?: string;
+    }
+
     export interface DSJsonApiAdapterOptions extends JSData.DSHttpAdapterOptions {
         log?: (message?: any, ...optionalParams: any[]) => void;
         error?: (message?: any, ...optionalParams: any[]) => void;
 
+        // DSHTTPSpecific Options
         http?: any;
         headers?: any;
+        method?: string;
 
         // If required pass json api specific options on here
-        jsonApi?: any,
+        jsonApi?: DSJsonApiOptions,
 
         // We can pass in an existing adapter rather than creating internally.
         // This can work better with js-data-angular
