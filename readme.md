@@ -54,7 +54,7 @@ store.registerAdapter('jsonApi', adapter, { default: true });
 ```
 
 ### Version
-0.0.0-alpha.8
+0.0.0-alpha.10
 
 ### Tech
 
