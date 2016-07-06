@@ -63,12 +63,12 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
 
         // Override Get Path
         this.adapter.getPath = (method: string, resourceConfig: JSData.DSResourceDefinition<any>, id: Object, options: JSData.DSConfiguration): string => {
-            return this.getPath(method, resourceConfig, id, options);
+                return this.getPath(method, resourceConfig, id, options);
         };
 
         // Override HTTP
         this.adapter.HTTP = (options: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> => {
-            return this.HTTP(options);
+                return this.HTTP(options);
         };
     }
 
@@ -136,74 +136,79 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         */
     getPath(method: string, resourceConfig: JSData.DSResourceDefinition<any>, id: Object, options: JSData.DSConfiguration): string {
 
-        //Get the resource item
-        var item: JsonApi.JsonApiData;
-        if (this.DSUtils._sn(id)) {
-            item = resourceConfig.get(<any>id);
-        } else if (this.DSUtils._o(id)) {
-            item = <any>id;
-        }
+        if (Helper.JsonApiHelper.ContainsJsonApiContentTypeHeader(this.DSUtils.get<{ [name: string]: string }>(options, 'headers'))) {
+            //Get the resource item
+            var item: JsonApi.JsonApiData;
+            if (this.DSUtils._sn(id)) {
+                item = resourceConfig.get(<any>id);
+            } else if (this.DSUtils._o(id)) {
+                item = <any>id;
+            }
 
-        var jsonApiPath = this.DSUtils.get(options, 'jsonApi.jsonApiPath');
-        if (jsonApiPath) {
-            // Discard any additional parameters as we have the path recorded from a JsonApi response!
-            (<any>options).params = {};
-        } else {
+            var jsonApiPath = this.DSUtils.get(options, 'jsonApi.jsonApiPath');
+            if (jsonApiPath) {
+                // Discard any additional parameters as we have the path recorded from a JsonApi response!
+                (<any>options).params = {};
+            } else {
 
-            if (method === 'findAll') {
-                // EXPERIMENTAL CODE
-                // Here id is a params object that contains a parent id (actuallly stored in options.params)
-                // The resource is the definition of the child items (which we intend to return).
-                // We want to get hold of the the parent Id, so that we can get the related link from the parent, of the relationship originally passed to loadRelations.
-                // ANOTHER option is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
+                if (method === 'findAll') {
+                    // EXPERIMENTAL CODE
+                    // Here id is a params object that contains a parent id (actuallly stored in options.params)
+                    // The resource is the definition of the child items (which we intend to return).
+                    // We want to get hold of the the parent Id, so that we can get the related link from the parent, of the relationship originally passed to loadRelations.
+                    // ANOTHER option is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
 
-                //[1] Get back the parent object referenced in finaAll / loadRelations
-                let parentResourceName = (<any>resourceConfig).parent;
+                    //[1] Get back the parent object referenced in finaAll / loadRelations
+                    let parentResourceName = (<any>resourceConfig).parent;
 
-                // The local key of the child <==> the foreign key of the parent
-                let foreignKeyName = (<any>resourceConfig).parentKey;
+                    // The local key of the child <==> the foreign key of the parent
+                    let foreignKeyName = (<any>resourceConfig).parentKey;
 
-                if (parentResourceName && foreignKeyName && (<any>options).params && ((<any>options).params)[foreignKeyName]) {
-                    let pk = ((<any>options).params)[foreignKeyName];
-                    let parentRes: JSData.DSResourceDefinition<any> = (<any>resourceConfig.getResource(parentResourceName));
-                    var parentItem = parentRes.get(pk);
-                    var parentResource = new Helper.SerializationOptions(parentRes);
+                    if (parentResourceName && foreignKeyName && (<any>options).params && ((<any>options).params)[foreignKeyName]) {
+                        let pk = ((<any>options).params)[foreignKeyName];
+                        let parentRes: JSData.DSResourceDefinition<any> = (<any>resourceConfig.getResource(parentResourceName));
+                        var parentItem = parentRes.get(pk);
+                        var parentResource = new Helper.SerializationOptions(parentRes);
 
-                    // We need the nameof the relationship!!
-                    var parentChildRelation = parentResource.getChildRelationWithForeignKey(resourceConfig.name, foreignKeyName);
+                        // We need the nameof the relationship!!
+                        var parentChildRelation = parentResource.getChildRelationWithForeignKey(resourceConfig.name, foreignKeyName);
 
-                    if (parentItem) {
-                        var metaData = Helper.MetaData.TryGetMetaData(parentItem);
-                        if (metaData) {
-                            var relationLink = metaData.getRelationshipLink(parentChildRelation.localField, Helper.JSONAPI_RELATED_LINK); //resourceConfig.name,
-                            if (relationLink) {
-                                (<any>options).params = {};
-                                jsonApiPath = relationLink.url;
+                        if (parentItem) {
+                            var metaData = Helper.MetaData.TryGetMetaData(parentItem);
+                            if (metaData) {
+                                var relationLink = metaData.getRelationshipLink(parentChildRelation.localField, Helper.JSONAPI_RELATED_LINK); //resourceConfig.name,
+                                if (relationLink) {
+                                    (<any>options).params = {};
+                                    jsonApiPath = relationLink.url;
+                                }
                             }
                         }
                     }
-                }
-            } else {
-                // Only existing objects should have meta data
-                if (method === 'update') {
-                    //TODO : for updates use self link!!
-                    var metaData = Helper.MetaData.TryGetMetaData(item);
-                    if (metaData && metaData.selfLink) {
-                        jsonApiPath = metaData.selfLink;
+                } else {
+                    // Only existing objects should have meta data
+                    if (method === 'update') {
+                        //TODO : for updates use self link!!
+                        var metaData = Helper.MetaData.TryGetMetaData(item);
+                        if (metaData && metaData.selfLink) {
+                            jsonApiPath = metaData.selfLink;
+                        }
                     }
                 }
             }
+
+            //var pk = this.DSUtils.resolveId(resourceConfig, id);
+            //rejectvar item = resourceConfig.get(<any>pk);
+
+            // See if we have the item self link stored, if so useit directly
+            //var url = (item && item.GetSelfLink)
+            //    ? item.GetSelfLink()
+            //    : null;
+
+            return jsonApiPath ? jsonApiPath : this.adapterGetPath.apply(this.adapter, [method, resourceConfig, id, options]);
+        } else {
+            return this.adapterGetPath.apply(this.adapter, [method, resourceConfig, id, options]);
         }
 
-        //var pk = this.DSUtils.resolveId(resourceConfig, id);
-        //rejectvar item = resourceConfig.get(<any>pk);
-
-        // See if we have the item self link stored, if so useit directly
-        //var url = (item && item.GetSelfLink)
-        //    ? item.GetSelfLink()
-        //    : null;
-
-        return jsonApiPath ? jsonApiPath : this.adapterGetPath.apply(this.adapter, [method, resourceConfig, id, options]);
     }
 
     /**
@@ -265,21 +270,25 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         return this.adapterHTTP.apply(this.adapter, [options])
             .then((response: JSData.DSHttpAdapterPromiseResolveType) => {
 
-                // Need to handle server 204 no content
-                // In the case where the server saves exactly what was sent it is possible that the server will not reply with data
-                // but instead reply with 204, NoContent
-                if (response.status === HttpNoContent && options['method'] && (options['method'] === 'put' || options['method'] === 'patch')) {
+                // If this is notjson API fall backtostandard Http adapter behaviour
+                if (Helper.JsonApiHelper.ContainsJsonApiContentTypeHeader(this.DSUtils.get<{ [name: string]: string }>(options, 'headers'))) {
+                    // Need to handle server 204 no content
+                    // In the case where the server saves exactly what was sent it is possible that the server will not reply with data
+                    // but instead reply with 204, NoContent
+                    if (response.status === HttpNoContent && options['method'] && (options['method'] === 'put' || options['method'] === 'patch')) {
 
-                    // Just return original request data, so that js-data will update data store in case it has chnages but
-                    // those changes happens to be the same as whats on the server
-                    if (options['data']) {
-                        response.status = 200;
-                        response['statusText'] = 'Ok';
-                        response.headers = response.headers || {};
-                        Helper.JsonApiHelper.AddJsonApiContentTypeHeader(response.headers);
-                        response.data = options['data'];
+                        // Just return original request data, so that js-data will update data store in case it has chnages but
+                        // those changes happens to be the same as whats on the server
+                        if (options['data']) {
+                            response.status = 200;
+                            response['statusText'] = 'Ok';
+                            response.headers = response.headers || {};
+                            Helper.JsonApiHelper.AddJsonApiContentTypeHeader(response.headers);
+                            response.data = options['data'];
+                        }
                     }
                 }
+
             return response;
           });
     }

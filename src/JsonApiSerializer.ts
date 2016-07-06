@@ -436,12 +436,14 @@ export class JsonApiHelper {
     // The comparison is case insensitive, which is a REQUIREMENT
     // of http headers but is not implemented by angular.
     private static ContainsHeader(headers: { [name: string]: string }, header: string, value: string) {
-        //var headers: { [name: string]: string } = response.headers();
-        for (var key in headers) {
-            if (key.toLocaleLowerCase() === header.toLocaleLowerCase()) {
-                var h: string = headers[key];
-                if (h.toLocaleLowerCase().indexOf(value) > -1) {
-                    return true;
+
+        if (headers) {
+            for (var key in headers) {
+                if (key.toLocaleLowerCase() === header.toLocaleLowerCase()) {
+                    var h: string = headers[key];
+                    if (h.toLocaleLowerCase().indexOf(value) > -1) {
+                        return true;
+                    }
                 }
             }
         }

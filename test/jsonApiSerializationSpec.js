@@ -390,10 +390,11 @@
         
         beforeEach(function () {
             ds = new JSData.DS();
-            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+
+            var dsJsonApiAdapter = new DSJsonApiAdapter.JsonApiAdapter({
                 queryTransform: queryTransform
             });
-            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+            ds.registerAdapter('jsonApi', dsJsonApiAdapter, { default: true });
 
             test.config.User = ds.defineResource({
                 name: 'user',
@@ -437,5 +438,83 @@
                 return test.config.User.save(user.id);
             });
         });
-    }); 
+    });
+
+    describe('Fallback behaviour when not JsonApi', function () {
+        var ds;
+        var test = { config: {} };
+
+        beforeEach(function () {
+            ds = new JSData.DS();
+            var dsHttpAdapter = new DSHttpAdapter();
+            var dsJsonApiAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                queryTransform: queryTransform,
+                adapter: dsHttpAdapter
+            });
+            
+            ds.registerAdapter('jsonApi', dsJsonApiAdapter, { default: true }); 
+            ds.registerAdapter('http', dsHttpAdapter, { default: false });
+        });
+
+        it('should fall back to Non-JsonApi serialization when no Json Api content type detected, "Content-Type:application/vnd.api + json"', function () {
+            var _this = this;
+            
+            test.config.User = ds.defineResource({
+                name: 'user',
+                idAttribute: 'id',
+                adapter: 'http'
+            });
+
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length);
+                assert.equal(_this.requests[0].url, 'user');
+                assert.equal(_this.requests[0].method, 'POST');
+                assert.isDefined(_this.requests[0].requestHeaders, 'Request Contains headers');
+                assert.notEqual(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Should not contains json api accept required header');
+                assert.notInclude(_this.requests[0].requestHeaders['Content-Type'], 'application/vnd.api+json', 'Should not ontains json api content-type header');
+                
+                var request = JSON.parse(_this.requests[0].requestBody);
+                request.id = 1;
+
+                _this.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(request));
+            }, 30);
+            
+            return test.config.User.create({ author: 'John', age: 32 }).then(function (data) {
+                var user = test.config.User.get(1);
+                var meta = DSJsonApiAdapter.TryGetMetaData(user);
+                assert.isDefined(user, 'user deserialized and injected');
+                assert.isUndefined(meta, 'should not have JsonApi meta data');
+            });
+        });
+
+        it('should still use Json Api adapter when, "Content-Type:application/vnd.api + json"', function () {
+            var _this = this;
+            
+            test.config.User = ds.defineResource({
+                name: 'user',
+                idAttribute: 'id',
+            });
+            
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length);
+
+                assert.equal(_this.requests[0].method, 'POST');
+                assert.isDefined(_this.requests[0].requestHeaders, 'Request Contains headers');
+                assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Should contains json api accept required header');
+                assert.include(_this.requests[0].requestHeaders['Content-Type'], 'application/vnd.api+json', 'Should contains json api content-type header');
+                
+                var request = JSON.parse(_this.requests[0].requestBody);
+                request.data.id = 1;
+                
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(request));
+            }, 30);
+            
+            return test.config.User.create({ author: 'John', age: 32 }).then(function (data) {
+                var user = test.config.User.get(1);
+                var meta = DSJsonApiAdapter.TryGetMetaData(user);
+                assert.isDefined(user, 'user deserialized and injected');
+                assert.isDefined(meta, 'should not have JsonApi meta data');
+            });
+        });
+    });
 });
