@@ -35,9 +35,9 @@
                     data: {
                         //id: '', 
                         type: 'testuser', 
-                        attributes: { author: 'John', age: 31 }, 
-                        links: {}, 
-                        relationships: {}
+                        attributes: { author: 'John', age: 31 }
+                        //links: {}, 
+                        //relationships: {}
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 
@@ -72,9 +72,9 @@
                     data: {
                         //id: '', 
                         type: 'testuser', 
-                        attributes: { author: 'John', age: 32 }, 
-                        links: {}, 
-                        relationships: {}
+                        attributes: { author: 'John', age: 32 } 
+                        //links: {}, 
+                        //relationships: {}
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 
@@ -103,9 +103,9 @@
                     data: {
                         //id: '',
                         type: 'posts',
-                        attributes: { author: 'John', age: 31 },
-                        links: {},
-                        relationships: {}
+                        attributes: { author: 'John', age: 31 }
+                        //links: {},
+                        //relationships: {}
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 
@@ -191,9 +191,9 @@
                     data: {
                         //id: '', 
                         type: 'testuser', 
-                        attributes: { author: 'John', age: 32 }, 
-                        links: {}, 
-                        relationships: {}
+                        attributes: { author: 'John', age: 32 }
+                        //links: {}, 
+                        //relationships: {}
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 

@@ -17,6 +17,7 @@
         * @desc JsData resource name, can pass to getResource
         */
         relation: string; 
+        name: string;
 
         localField?: string;
 
@@ -56,7 +57,7 @@
         keys: (obj: Object) => any[];
 
         fillIn: <T>(target:T, obj:any) => T;
-
+        toJson: (data: any) => string;
 
     }
 }

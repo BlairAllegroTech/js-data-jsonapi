@@ -1,6 +1,5 @@
 ﻿describe('DSJsonAdapter.find(resourceConfig, id, options)', function () {
     
-    
     it('should make a GET request', function () {
         var _this = this;
         
@@ -39,8 +38,6 @@
             assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
         });
     });
-    
-    
     
     it('should allow overriding urlPath', function () {
         var _this = this;
@@ -199,7 +196,6 @@
         });
 
     });
-    
 
     it('should update data store when data is updated on the server after making a GET request', function () {
         var _this = this;
@@ -278,4 +274,129 @@
         });
 
     });
+    
+    
+    describe('Null Result Handling', function () {
+        var ds;
+        var test = { config: {} };
+        
+        beforeEach(function () {
+            //Create js-data
+            ds = new JSData.DS();
+            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                queryTransform: queryTransform
+            });
+            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+
+            // Configure js-data resources
+            test.config.Article = ds.defineResource({
+                name: 'article',
+                idAttribute: 'id',
+                relations: {
+                    
+                    hasOne: {
+                        author: {
+                            localField: 'myauthor',
+                            localKey: 'authorid'
+                        }
+                    }
+                }
+            });
+            
+            test.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+            });
+            
+            //var author = { id: 1, name: 'Bob', articleid: 2 };
+            //var article = { id: 2, title: 'js-data' }; //, authorid: 1
+            //article.author = author;
+        });
+
+        it('should break relationshiplink when GET request returns a NULL in respose to a request for a "toOne" related object', function () {
+            var _this = this;
+            
+            setTimeout(function () {
+                var index = _this.requests.length - 1;
+                assert.equal(1, _this.requests.length);
+                //assert.equal(_this.requests[index].url, 'api/article/1');
+                assert.equal(_this.requests[index].method, 'POST');
+                assert.isDefined(_this.requests[index].requestHeaders);
+                assert.equal(_this.requests[index].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                
+                var request = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                .WithData(
+                    new DSJsonApiAdapter.JsonApi.JsonApiData('article')
+                        .WithId('1')
+                        .WithAttribute('name', 'test article')
+                        .WithLink('self', 'api/article/1')
+                        .WithRelationship('myauthor',
+                            new DSJsonApiAdapter.JsonApi.JsonApiRelationship(false)
+                                .WithLink('related', 'api/article/1/author')
+                                .WithData('author', '1')
+                        )
+                )
+                .WithIncluded(
+                    new DSJsonApiAdapter.JsonApi.JsonApiData('author')
+                        .WithId('1')
+                        .WithAttribute('name', 'bob')
+                        .WithLink('self', 'api/author/1')
+                    //    .WithRelationship('article', 
+                    //        new DSJsonApiAdapter.JsonApi.JsonApiRelationship(false)
+                    //            .WithLink('related', 'api/author/1/article')
+                    //            .WithData('article', '1')
+                    //)   
+                );
+
+                var responseString = JSON.stringify(request);
+                _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, responseString);
+            }, 30);
+            
+            //test.config.Article.inject(article);
+            return test.config.Article.create({ name: 'my book' }).then(function () {
+                var article = test.config.Article.get(1);
+                assert.isDefined(article, 'Author should be injected');
+                assert.isDefined(article.myauthor, 'Author should have related Article');
+                
+                setTimeout(function () {
+                    var index = _this.requests.length - 1;
+                    assert.equal(2, _this.requests.length);
+                    assert.equal(_this.requests[index].url, 'api/article/1/author');
+                    assert.equal(_this.requests[index].method, 'GET');
+                    assert.isDefined(_this.requests[index].requestHeaders);
+                    assert.equal(_this.requests[index].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                    
+                    var request = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                        .WithLink('self', 'api/article/1/relationships/author')
+                        .WithLink('related', 'api/article/1/author');
+                    request.data = null;
+                    //.WithData(null);
+                    
+                    var responseString = JSON.stringify(request);
+                    _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, responseString);
+                }, 30);
+                
+                return article.findRelated('myauthor', {bypassCache:true}).then(function (data) {
+                //return test.config.Article.loadRelations(1, ['myauthor'], { bypassCache: true }).then(function (data) {
+                    
+                    var article = test.config.Article.get(1);
+                    var author = test.config.Author.get(1);
+                    
+                    var meta = DSJsonApiAdapter.TryGetMetaData(author);
+                    assert.isDefined(meta, 'Should have meta data');
+
+                    assert.isDefined(article, 'should find Article 1');
+                    assert.isDefined(author, 'should still find Author in store');
+                    
+                    // TODO Relates to #10
+                    //assert.isUndefined(article.myauthor, 'article link should have been removed / un linked');
+                });
+ 
+
+            }); //end: it
+        });
+      
+    });
+    
+
 });

@@ -25,16 +25,17 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
             
             assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
             assert.include(_this.requests[0].requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
-            assert.equal(_this.requests[0].requestBody, DSUtils.toJson({
-                data: {
-                    //id:'100', Do not set..
-                    type: 'posts', 
-                    attributes: { author: 'John', age: 32 }, 
-                    links: {}, 
-                    relationships: {}
-                }
-            }), 'Json data serialized to jsonApi data correctly, without client id');
             
+            var request = JSON.parse(_this.requests[0].requestBody);
+            var expectedData = {
+                //id:'100', Do not set..
+                type: 'posts', 
+                attributes: { author: 'John', age: 32 }
+                    //links: {}, 
+                    //relationships: {}
+            };
+
+            assert.deepEqual(request.data, expectedData, 'Json data serialized to jsonApi data correctly, without client id');
             _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response.jsonApiData));
         }, 30);
         
@@ -59,9 +60,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                 data: {
                     id: '5',
                     type: 'posts', 
-                    attributes: { author: 'John', age: 32 }, 
-                    links: {}, 
-                    relationships: {}
+                    attributes: { author: 'John', age: 32 }
+                    //links: {}, 
+                    //relationships: {}
                 }
             }), 'Json data serialized to jsonApi data correctly, with client id');
             
@@ -79,7 +80,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         
         setTimeout(function () {
             assert.equal(1, _this.requests.length);
-            assert.equal(_this.requests[0].url, 'api/posts');
+                assert.equal(_this.requests[0].url, 'api/posts');
             assert.equal(_this.requests[0].method, 'POST');
             assert.isDefined(_this.requests[0].requestHeaders, 'Request Contains headers');
             
@@ -89,9 +90,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                 data: {
                     //id: '', 
                     type: 'posts', 
-                    attributes: { author: 'John', age: 32 }, 
-                    links: {}, 
-                    relationships: {}
+                    attributes: { author: 'John', age: 32 }
+                    //links: {}, 
+                    //relationships: {}
                 }
             }), 'Json data serialized to jsonApi data correctly');
             
@@ -113,9 +114,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                     data: {
                         //id: '',
                         type: 'posts', 
-                        attributes: { author: 'John', age: 32 }, 
-                        links: {}, 
-                        relationships: {}
+                        attributes: { author: 'John', age: 32 }
+                        //links: {}, 
+                        //relationships: {}
                     }
                 }));
                 
@@ -143,9 +144,9 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                 data: [{
                         //id: '', 
                         type: 'posts', 
-                        attributes: { author: 'John', age: 32 }, 
-                        links: {}, 
-                        relationships: {}
+                        attributes: { author: 'John', age: 32 }
+                        //links: {}, 
+                        //relationships: {}
                     }]
             }), 'Json data serialized to jsonApi data correctly');
             

@@ -14,6 +14,10 @@ export class JsonApiRequest {
         //this.included = new Array<JsonApiData>();
         //this.errors = new Array<JsonApiError>();
         //this.links = {};
+
+        // Do this later
+        //this.jsonapi = new JsonApiVersion();
+        //this.jsonapi.version = '1.0';
     }
 
     GetErrorsAsString(): string {
@@ -60,6 +64,12 @@ export class JsonApiRequest {
         this.links[linkType] = link;
         return this;
     }
+
+    WithMeta(key: string, value: string): JsonApiRequest {
+        this.meta = this.meta || new Meta();
+        this.meta[key] = value;
+        return this;
+    }
 }
 
 export class JsonApiData {
@@ -74,23 +84,27 @@ export class JsonApiData {
     constructor(type: string) {
         this.id = undefined;
         this.type = type;
-        this.attributes = {};
-        this.links = {};
-        this.relationships = {};
+
+        this.attributes = undefined;
+        this.links = undefined;
+        this.relationships = undefined;
     }
 
 
     WithAttribute(key: string, value: string): JsonApiData {
+        this.attributes = this.attributes || {};
         this.attributes[key] = value;
         return this;
     }
 
     AddLink(linkType: string, link: MetaLink): JsonApiData {
+        this.links = this.links || {};
         this.links[linkType] = link;
         return this;
     }
 
     WithLink(linkType: string, uri: string): JsonApiData {
+        this.links = this.links || {};
         this.links[linkType] = new MetaLink(uri);
         return this;
     }
@@ -173,7 +187,7 @@ export class Meta {
     fields: { [key: string]: string; };
 
     constructor() {
-        this.fields = {};
+        this.fields = undefined;
     }
 }
 
@@ -194,5 +208,5 @@ export class JsonApiError {
 
 export class JsonApiVersion {
     version: string;
-    meta: Meta;
+    //meta: Meta;
 }

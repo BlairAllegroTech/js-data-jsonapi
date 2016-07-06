@@ -91,7 +91,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                                 this.defaults.log(
                                     'Warning: Json Api resource name missmatch, ' +
                                     'JsonApi:' + (item.type || 'missing') +
-                                    ', js-data:',  [resourceConfig.name]);
+                                    ', js-data:', [resourceConfig.name]);
 
                                 item.type = resourceConfig.name;
                             }
@@ -102,19 +102,19 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                             this.defaults.log(
                                 'Warning: Json Api resource name missmatch, ' +
                                 'JsonApi:' + (response.data.data['type'] || 'missing') +
-                                ', js-data:',  resourceConfig.name);
+                                ', js-data:', resourceConfig.name);
 
                             data.type = resourceConfig.name;
                         }
                     }
-
-                    // Response should contain data and model. 
-                    var obj = Helper.JsonApiHelper.DeSerialize(new Helper.SerializationOptions(resourceConfig), response.data);
-
-                    // Return just the object graph to js data
-                    // Maybe this could be an options to return eithere JsoinApiReposne or a js-dataized object
-                    response.data = obj.data;
                 }
+
+                // Response should contain data and model.
+                var obj = Helper.JsonApiHelper.DeSerialize(new Helper.SerializationOptions(resourceConfig), response.data);
+
+                // Return just the object graph to js data
+                // Maybe this could be an options to return eithere JsoinApiReposne or a js-dataized object
+                response.data = obj.data;
             }
         }
         return response;
