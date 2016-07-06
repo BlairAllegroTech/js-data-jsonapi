@@ -9,7 +9,7 @@ import JsonApi = require('./JsonApi');
 //var jsdata: Function = require('js-data');
 
 
-const JSONAPI_META: string = '$_JSONAPIMETA_';
+export const JSONAPI_META: string = '$_JSONAPIMETA_';
 const jsonApiContentType: string = 'application/vnd.api+json';
 export const JSONAPI_RELATED_LINK: string = 'related';
 export const JSONAPI_PARENT_LINK: string = 'parent';
@@ -487,7 +487,7 @@ export class JsonApiHelper {
                 result.WithData(this.ObjectToJsonApiData(options, item));
             });
         } else {
-            // Not sure this is really necessary could just always send an array ?
+            // JsonAPI single object
             result.data = <any>this.ObjectToJsonApiData(options, contents);
         }
         return result;
@@ -876,7 +876,8 @@ export class JsonApiHelper {
 
         for (var prop in contents) {
             // Skip id attribute as it has already been copied to the id field out side of the attributes collection
-            if (prop === options.idAttribute) {
+            // Todo skip any non-json api compliant tags
+            if (prop === options.idAttribute || prop === JSONAPI_META || prop.indexOf('$') >= 0 ) {
                 continue;
             }
 
@@ -968,14 +969,16 @@ export class JsonApiHelper {
 
         //Get each child relationship
         for (var relationName in data.relationships) {
-            
             if (data.relationships[relationName]) {
 
                 // Relation name should be the local field name of a relationship.
                 var relationship = data.relationships[relationName];
 
                 // Data is truthy and is not an array or if an array is not empty
-                var hasData = (relationship.data && (!DSUTILS.isArray(relationship.data) || (DSUTILS.isArray(relationship.data) && (<JsonApi.JsonApiData[]>relationship.data).length > 0)));
+                var hasData = (relationship.data && (
+                    !DSUTILS.isArray(relationship.data) ||
+                    (DSUTILS.isArray(relationship.data) && (<JsonApi.JsonApiData[]>relationship.data).length > 0))
+                );
 
                 if (hasData) {
                     var joinTableFactory = null;

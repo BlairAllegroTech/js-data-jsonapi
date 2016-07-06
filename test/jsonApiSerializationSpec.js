@@ -383,4 +383,59 @@
 
         });
     });
+
+    describe('Meta Data', function () {
+        var ds;
+        var test = { config: {} };
+        
+        beforeEach(function () {
+            ds = new JSData.DS();
+            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                queryTransform: queryTransform
+            });
+            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+
+            test.config.User = ds.defineResource({
+                name: 'user',
+                idAttribute: 'id'
+            });
+            
+            test.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
+            test.jsonApiData.WithData(
+                new DSJsonApiAdapter.JsonApi.JsonApiData('user')
+                    .WithId('2')
+                    .WithAttribute('author', 'John')
+                    .WithAttribute('age', 31));
+            
+            test.model = [{ Id: '2', author: 'John', age: 31 }]; //ISMODEL: true, type: 'testuser'
+        });
+        
+        it('should not serialize meta data', function () {
+            var _this = this;
+            
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length);
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(test.jsonApiData));
+            }, 30);
+            
+            return test.config.User.create({ author: 'John', age: 32 }).then(function (data) {
+                var user = test.config.User.get(2);
+                var meta = DSJsonApiAdapter.TryGetMetaData(user);
+                assert.isDefined(user, 'user should be in the store');
+                assert.isDefined(meta, 'user should have meta data in the store');
+                
+                setTimeout(function () {
+                    assert.equal(2, _this.requests.length, 'should make second request');
+                    
+                    var request = JSON.parse(_this.requests[1].requestBody);
+                    assert.isUndefined( request.data.attributes['$_JSONAPIMETA_'], 'should not send meta data');
+
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, _this.requests[1].requestBody);
+                }, 30);
+
+                user.name = 'bob';
+                return test.config.User.save(user.id);
+            });
+        });
+    }); 
 });
