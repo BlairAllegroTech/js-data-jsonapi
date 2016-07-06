@@ -34,7 +34,7 @@
     "tslint": "tslint -c tslint.json ./src/**/*.ts",
     "compile": "tsc",
     "bundle": "webpack --config webpack.config.js --colors",
-    "min": "uglifyjs dist/js-data-jsonapi.js -o dist/js-data-jsonapi.min.js --source-map dist/js-data-jaonapi.min.map -v -m -c --screw-ie8",
+    "min": "uglifyjs dist/js-data-jsonapi.js -o dist/js-data-jsonapi.min.js --source-map dist/js-data-jsonapi.min.map -v -m -c --screw-ie8",
     "version": "node scripts/version.js",
     "banner": "node scripts/banner.js",
     "gzip": "echo gzipped size: $(cat dist/js-data-jsonapi.min.js | gzip -f9 | wc -c)kb",
