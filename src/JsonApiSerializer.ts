@@ -123,9 +123,9 @@ class ModelPlaceHolder {
     type: string;
     id: string;
 
-    foreignType: string;
-    foreignKeyName: string;
-    foreignKeyValue: string;
+    keyType: string;
+    keyName: string;
+    keyValue: string;
 
     constructor(type: string, id: string) {
         this.type = type;
@@ -137,9 +137,9 @@ class ModelPlaceHolder {
     }
 
     WithForeignKey(keyName: string, keyValue: string, keyType: string): ModelPlaceHolder {
-        this.foreignKeyName = keyName;
-        this.foreignKeyValue = keyValue;
-        this.foreignType = keyType;
+        this.keyName = keyName;
+        this.keyValue = keyValue;
+        this.keyType = keyType;
         return this;
     }
 }
@@ -619,10 +619,14 @@ export class JsonApiHelper {
 
                 if (newItem) {
                     //Included item found!!
+
                     // Apply foreign key to js-data object
-                    if (itemPlaceHolder.foreignKeyName) {
-                        newItem[itemPlaceHolder.foreignKeyName] = itemPlaceHolder.foreignKeyValue;
+                    if (itemPlaceHolder.keyName) {
+                        newItem[itemPlaceHolder.keyName] = itemPlaceHolder.keyValue;
                     }
+
+                    //TODO  : What about local keys, when this is a locaKeys array we must append to it!!
+                    // These are/have ben set directly on the parent in Deserialize
 
                     // To avoid circular dependanciesin the object graph that we send to jsData only include an object once.
                     // Otherwise it is enough to reference an existing object by its foreighn key
@@ -638,9 +642,12 @@ export class JsonApiHelper {
                     let newItem = <any>{};
 
                     // Apply foreign key to js-data object 
-                    if (itemPlaceHolder.foreignKeyName) {
-                        newItem[itemPlaceHolder.foreignKeyName] = itemPlaceHolder.foreignKeyValue;
+                    if (itemPlaceHolder.keyName) {
+                        newItem[itemPlaceHolder.keyName] = itemPlaceHolder.keyValue;
                     }
+
+                    //TODO  : What about local keys, when this is a locaKeys array we must append to it!!
+                    // These are/have ben set directly on the parent in Deserialize
 
                     // Replace item in array with plain object, but with Primary key or any foreign keys set
                     var itemOptions = options.getResource(itemPlaceHolder.type);
@@ -670,19 +677,18 @@ export class JsonApiHelper {
                 let newItem = itemSelector(itemPlaceHolder);
 
                 if (newItem) {
-                    // To avoid circular dependanciesin the object graph that we send to jsData only include an object once.
-                    // Otherwise it is enough to reference an existing object by its foreighn key
+                    // To avoid circular dependancies in the object graph that we send to jsData only include an object once.
+                    // Otherwise it is enough to reference an existing object by its foreign key
                     var meta = MetaData.TryGetMetaData(newItem);
                     if (meta.incrementReferenceCount() === 1) {
                         return newItem;
                     } else {
 
-                        // hasOne usesforeign key and localal field
+                        // hasOne uses foreignKey or localKey fieldand localField
                         // Apply foreign key to js-data object hasOne
-                        if (itemPlaceHolder.foreignKeyName) {
-                            newItem[itemPlaceHolder.foreignKeyName] = itemPlaceHolder.foreignKeyValue;
+                        if (itemPlaceHolder.keyName) {
+                            newItem[itemPlaceHolder.keyName] = itemPlaceHolder.keyValue;
                         } else {
-
                             var relation = opt.getParentRelationByLocalField(localField);
                             //Belongs to uses localfield and localkey
                             if (relation && relation.type === jsDataBelongsTo) {
@@ -698,9 +704,9 @@ export class JsonApiHelper {
                     // Replace item in array with plain object, but with Primary key or any foreign keys set
                     var itemOptions = options.getResource(itemPlaceHolder.type);
 
-                    // Apply foreign key to js-data object 
-                    if (itemPlaceHolder.foreignKeyName) {
-                        newItem[itemPlaceHolder.foreignKeyName] = itemPlaceHolder.foreignKeyValue;
+                    // Apply keys, foreign and local to js-data object 
+                    if (itemPlaceHolder.keyName) {
+                        newItem[itemPlaceHolder.keyName] = itemPlaceHolder.keyValue;
                     }
 
                     let metaData = new MetaData(itemPlaceHolder.type);
@@ -1113,10 +1119,8 @@ export class JsonApiHelper {
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"
                     // hasOne uses "localField" and "localKey" or "foreignKey"
                     var localField = relationshipDef.localField;
-                    //var localKeys = relationshipDef.localKeys;
-                    //var localKey = relationshipDef.localKey;
-                    var relationType = relationshipDef.type; //hasOne or hasMany
                     var foreignKey = relationshipDef.foreignKey;
+                    var relationType = relationshipDef.type; //hasOne or hasMany
 
                     if (!localField) {
                         throw new Error(
@@ -1130,35 +1134,51 @@ export class JsonApiHelper {
                                 'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
                                 'A "hasMany" relationship requires either "foreignKey" or "localKeys" to be configured');
                         }
+                        if (foreignKey && relationshipDef.localKeys) {
+                            throw new Error(
+                                'ERROR: Ambiguous js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
+                                'A "hasMany" relationship has both localKeys and foreignKeys configured, use either "foreignKey" or "localKeys" but not BOTH');
+                        }
+
                     } else {
                         if (!(foreignKey || relationshipDef.localKey)) {
                             throw new Error(
                                 'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
                                 'A "hasOne" relationship requires either "foreignKey" or "localKey" to be configured');
                         }
+
+                        if (foreignKey && relationshipDef.localKey) {
+                            throw new Error(
+                                'ERROR: Ambiguous js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
+                                'A "hasOne" relationship has both localKey and foreignKey configured, use either "foreignKey" or "localKey" but not BOTH');
+                        }
                     }
 
-                    // NOT SURE if we need these local keys..
-                    var localKeysList = new Array<string>();
                     // From each relationship, get the data IF it is an array
                     if (DSUTILS.isArray(relationship.data)) {
 
+                        // NOT SURE if we need these local keys..
+                        var localKeysList = new Array<string>();
+
+                        // TO MANY RELATIONSHPI, use either foreignKey or localKeys
                         var relatedItems = new Array<Object>();
                         DSUTILS.forEach((<JsonApi.JsonApiData[]>relationship.data), (item: JsonApi.JsonApiData) => {
 
                             if (joinTableFactory == null) {
-
                                 var id = item.id;
                                 var type = item.type;
 
-                                localKeysList.push(id);
-
                                 let relatedItem = new ModelPlaceHolder(type, id);
                                 if (relationshipDef.foreignKey) {
-                                    relatedItem.WithForeignKey(foreignKey, data.id, data.type);
+                                    // Store foreign key forfuture reference, so that it can be applied to foreign object later once resolved
+                                    relatedItem.WithForeignKey(relationshipDef.foreignKey, data.id, data.type);
+                                } else {
+                                    // Store local keys directly on the object
+                                    localKeysList.push(id);
                                 }
 
                                 relatedItems.push(relatedItem);
+
                             } else {
                                 // This is part of a manyToMany relationship
                                 // This new joinItem needs to be added to the main collection of objets so that in the next pass where we resolve 
@@ -1166,46 +1186,40 @@ export class JsonApiHelper {
                                 let relatedItem = joinTableFactory(item, relationship.FindLinkType('self'));
 
                                 localKeysList.push(id);
-
                                 relatedItems.push(relatedItem);
                             }
                         });
 
-                        // Store related local items for toMany relationship
+                        // Configure js-data relations.
+                        // If the relation dosent have a foreignKey defined then we must use localKeys
+                        if (relationshipDef.localKeys) {
+                            // hasMany uses localKeys
+                            fields[relationshipDef.localKeys] = localKeysList; //Set localKeys on Parent
+                        }
+
+                        // Store related local items for toMany relationship refered to by foreignKeys or localKeys
                         fields[localField] = relatedItems;
 
-                        // Configure js-data relations
-                        if (!relationshipDef.foreignKey) {
-                            // hasOne uses localKey has many uses localKeys
-                            var key = (relationType === jsDataHasMany) ? relationshipDef.localKeys : relationshipDef.localKey;
-                            fields[key] = localKeysList; //Set localKeys on Parent
-                        }
+
                     } else {
+                        // TO ONE RELATIONSHIP
                         // If data is not an array then set a single item.
                         let item: JsonApi.JsonApiData = (<any>relationship.data);
                         var id = item.id;
                         var type = item.type;
 
-                        localKeysList.push(id);
-
                         let relatedItem = new ModelPlaceHolder(type, id);
                         if (relationshipDef.foreignKey) {
-                            relatedItem.WithForeignKey(foreignKey, data.id, data.type);
-                            fields[localField] = relatedItem;
+                            relatedItem.WithForeignKey(relationshipDef.foreignKey, data.id, data.type);
+                        } else {
+                            // hasOne uses localKey
+                            fields[relationshipDef.localKey] = id; //Set localKeys on Parent
                         }
 
-                        if (!relationshipDef.foreignKey) {
-                            if (relationshipDef.type === jsDataHasOne) {
-                                // Store related local keys for toOne related items relationship
-                                fields[localField] = relatedItem;
-                            } else {
-                                // Store related local keys for toMany related items relationship
-                                fields[localField] = [relatedItem];
-                            }
+                        // Store related local key for toOne related items relationship
+                        // This will get removed later and either resolved to a relateed object or the stored key set on the parent
+                        fields[localField] = relatedItem;
 
-                            // hasOne uses localKey hasMany uses localKeys
-                            fields[(relationshipDef.localKeys || relationshipDef.localKey)] = localKeysList; //Set localKeys on Parent
-                        }
                     }
                 } else {
                     // When a relationship has no data we must still return it to js-data so that the data store is updated.
