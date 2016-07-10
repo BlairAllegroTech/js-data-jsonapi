@@ -3,6 +3,7 @@
 [![npm version][npm_v_badge]][npm_link]
 [![npm downloads][npm_dwn_badge]][npm_link]
 [![cicleci build][circleci_badge]][circleci_link]
+[![Coveralls][coverage_badge]][coverage_link]
 
 ###JsonApi Adapter for [js-data](http://www.js-data.io) 
 This adapter implements the [JsonApi Protocol](http://jsonapi.org/) and ties it to a js-data data store.
@@ -53,6 +54,17 @@ store.registerAdapter('jsonApi', adapter, { default: true });
 // "store" will now use the jsonApi adapter for all async operations
 ```
 
+Or alternaticely to use an existing HttpAdapter for example whenusing js-data-angular
+```
+.run(function(DS, DSHttpAdapter) {
+    
+    var options = {adapter:DSHttpAdapter};
+    var adapter = new DSJsonApiAdapter.JsonApiAdapter(options);
+    DS.registerAdapter('jsonApi', adapter, { default: true });
+    ....
+}
+```
+
 ### Version
 0.0.0-alpha.11
 
@@ -92,3 +104,5 @@ SOFTWARE.
 [npm_dwn_badge]: https://img.shields.io/npm/dm/js-data-jsonapi.svg
 [circleci_link]: https://circleci.com/gh/BlairAllegroTech/js-data-jsonapi/tree/master
 [circleci_badge]: https://circleci.com/gh/BlairAllegroTech/js-data-jsonapi.svg?style=shield
+[coverage_badge]: https://coveralls.io/repos/github/BlairAllegroTech/js-data-jsonapi/badge.svg?branch=js-data-jsonapi
+[coverage_link]: https://coveralls.io/github/BlairAllegroTech/js-data-jsonapi?branch=js-data-jsonapi

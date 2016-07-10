@@ -751,17 +751,11 @@ export class JsonApiHelper {
         // This is an array of top level objects with child, object references and included objects
         var jsDataArray = [];
         if (data) {
-            for (var dataType in data) {
-
-                if (data[dataType]) {
-                    for (var dataId in data[dataType]) {
-
-                        if (data[dataType][dataId]) {
-                            jsDataArray.push(data[dataType][dataId]);
-                        }
-                    }
+            DSUTILS.forEach(newResponse.data, (item: JsonApi.JsonApiData) => {
+                if (data[item.type] && data[item.type][item.id]) {
+                    jsDataArray.push(data[item.type][item.id]);
                 }
-            }
+            });
         }
 
         return new DeSerializeResult(jsDataArray, newResponse);
