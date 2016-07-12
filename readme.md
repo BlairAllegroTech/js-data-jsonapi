@@ -54,7 +54,7 @@ store.registerAdapter('jsonApi', adapter, { default: true });
 // "store" will now use the jsonApi adapter for all async operations
 ```
 
-Or alternaticely to use an existing HttpAdapter for example whenusing js-data-angular
+Or alternaticely to use an existing HttpAdapter for example when using js-data-angular
 ```
 .run(function(DS, DSHttpAdapter) {
     

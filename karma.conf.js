@@ -13,10 +13,15 @@ var customLaunchers = {
     }
 };
 
-var singleRun = true;
+// When on CI build we use singleRun and include Chrome
+var isCIBuild = (process.env.CI_BUILD) ? true : false;
+
 var browsers = ['PhantomJS'];
-//browsers = ['Chrome'];
-//singleRun = (false && browsers[0] === 'PhantomJS');
+if (isCIBuild === true) {
+    browsers.push('Chrome');
+}
+
+
 
 // If we are configured for Browser stack add additional browsers
 if (
@@ -27,7 +32,8 @@ if (
 }
 
 module.exports = function (config) {
-    config.set({
+    
+    var settings = {
         // base path, that will be used to resolve files and exclude
         basePath: './',
         frameworks: ['sinon', 'chai', 'mocha'],
@@ -84,7 +90,7 @@ module.exports = function (config) {
             suite: 'js-data-jsonapi',
             useBrowserName: false
         },
-
+        
         // the default configuration 
         htmlReporter: {
             outputDir: 'karma_html', // where to put the reports  
@@ -123,12 +129,24 @@ module.exports = function (config) {
         logLevel: config.LOG_INFO,
         
         client: { captureConsole: false },
-
+        
         // If browser does not capture in given timeout [ms], kill it
         captureTimeout: 30000,
         
         // Continuous Integration mode
         // if true, it capture browsers, run tests and exit
-        singleRun: singleRun
-    });
+        singleRun: false
+    };
+    
+    
+    // Modify configuration ...
+    if (isCIBuild === false) {
+        // Disable code coverage on local builds
+        settings.preprocessors = {};
+        // Run continuously on local build
+        settings.singleRun = false;
+    } else {
+        settings.singleRun = true;
+    }
+    config.set(settings);
 };
