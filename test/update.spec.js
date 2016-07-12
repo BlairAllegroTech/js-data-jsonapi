@@ -98,7 +98,7 @@ describe('Update Tests', function () {
                 assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
                 assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
                 
-                p1.model[0].Id = '1';
+                p1.model.Id = '1';
                 _this.requests[0].respond(204);//{ 'Content-Type': 'application/vnd.api+json' }
             }, 30);
 
@@ -121,7 +121,7 @@ describe('Update Tests', function () {
                 assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
                 assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
                 
-                p1.model[0].Id = '1';
+                p1.model.Id = '1';
                 _this.requests[0].respond(204);//{ 'Content-Type': 'application/vnd.api+json' }
             }, 30);
             
@@ -214,7 +214,7 @@ describe('Update Tests', function () {
                 author.name = 'New Author';
                 return ds.save('author', author.id).then(function (data) {
                     assert.isDefined(data, 'Result Sould exists');
-                    assert.equal(data[0].name, 'New Author');
+                    assert.equal(data.name, 'New Author');
                 });
             });
         });

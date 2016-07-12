@@ -56,6 +56,7 @@ var ignoreMetaData = function (data) {
                 assert.isDefined(item[JSONAPIMETATAG], 'should have json Api meta tag');
                 delete item[JSONAPIMETATAG];
                 
+                // RElationship properties are not enumerable!
                 for (var prop in item) {
                     if (DSUtils.isArray(item[prop])) {
                         ignoreMetaData(item[prop]);
@@ -225,12 +226,11 @@ beforeEach(function () {
     });
 
     datastore.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
-        
     queryTransform.callCount = 0;
     
     p1 = {};
     p1.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
-    p1.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+    p1.jsonApiData.WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
         .WithId('5')
         .WithAttribute('author', 'John')
         .WithAttribute('age', 30)
@@ -238,32 +238,33 @@ beforeEach(function () {
         //.WithLink('self', '/container/1/posts/5')
     );
 
-    p1.model = [{ Id: '5', age: 30, author: 'John', type:'person' }]; //ISMODEL: true, type: 'posts'
+    p1.model = { Id: '5', age: 30, author: 'John', type:'person' };
     
     p11 = {};
     p11.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
-    p11.jsonApiData.WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+    p11.jsonApiData.WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
         .WithId('5')
         .WithLink('self', '/container/1/posts/5')
         .WithAttribute('author', 'John')
         .WithAttribute('age', 30));
-    p11.model = [{ Id: '5',  age: 30, author: 'John', containerid: '1' }]; //ISMODEL: true, type: 'posts',
+    p11.model = { Id: '5',  age: 30, author: 'John', containerid: '1' }; //ISMODEL: true, type: 'posts',
     
     DataWithRelation = {};
     DataWithRelation.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
     DataWithRelation.jsonApiData
-        .WithData(
-        new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+        .WithSingleData(
+                new DSJsonApiAdapter.JsonApi.JsonApiData('container')
                 .WithId('1')
                 .WithLink('self', 'api/container/1')
                 .WithRelationship('containedposts', 
                     new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
+                        .WithLink('self', 'api/container/1/relationship/posts')
                         .WithData('posts', '5')
             )
         )
-        .WithIncluded(p11.jsonApiData.data[0]);
+        .WithIncluded(p11.jsonApiData.data);
 
-    DataWithRelation.model = [{ Id:'1', containedposts: p11.model}]; //ISMODEL: true, type:'container, PostsIds:['5']'
+    DataWithRelation.model = { Id:'1', containedposts: [p11.model]};
 
 
     p2 = { author: 'Sally', age: 31, id: 6 };

@@ -1,7 +1,7 @@
 ﻿
 
 export class JsonApiRequest {
-    data: JsonApiData[];
+    data: JsonApiData[] | JsonApiData;
     errors: JsonApiError[];
     included: JsonApiData[];
     links: { [key: string]: MetaLink };
@@ -10,10 +10,6 @@ export class JsonApiRequest {
     jsonapi: JsonApiVersion;
 
     constructor() {
-        //this.data = new Array<JsonApiData>();
-        //this.included = new Array<JsonApiData>();
-        //this.errors = new Array<JsonApiError>();
-        //this.links = {};
 
         // Do this later
         //this.jsonapi = new JsonApiVersion();
@@ -42,8 +38,15 @@ export class JsonApiRequest {
     }
 
     WithData(data: JsonApiData): JsonApiRequest {
-        this.data = this.data || new Array<JsonApiData>();
-        this.data.push(data);
+        var d : JsonApiData[] = <JsonApiData[]>this.data || new Array<JsonApiData>();
+        d.push(data);
+
+        this.data = d;
+        return this;
+    }
+
+    WithSingleData(data: JsonApiData): JsonApiRequest {
+        this.data = data;
         return this;
     }
 

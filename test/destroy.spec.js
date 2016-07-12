@@ -20,7 +20,7 @@
         }, 30);
         
         return dsHttpAdapter.destroy(Post, 1).then(function (data) {
-            assert.deepEqual(data, [], 'post should have been deleted');
+            assert.equal(data, null, 'post should have been deleted');
         });
     });
 
@@ -38,7 +38,7 @@
         }, 30);
         
         return dsHttpAdapter.destroy(Post, 1, { basePath: 'api2' }).then(function (data) {
-            assert.deepEqual(data, [], 'post should have been deleted, correct response when server returns "Ok NoContent(204)" response');
+            assert.equal(data, null, 'post should have been deleted, correct response when server returns "Ok NoContent(204)" response');
         });
     });
   

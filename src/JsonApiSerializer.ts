@@ -533,7 +533,7 @@ export class JsonApiHelper {
 
             // JSON API Specifies that a single data object be returned as an object where as data from a one to many should always be returned in an array.
             if (DSUTILS.isArray(response.data)) {
-                DSUTILS.forEach(response.data, (item: JsonApi.JsonApiData) => {
+                DSUTILS.forEach(<JsonApi.JsonApiData[]>response.data, (item: JsonApi.JsonApiData) => {
 
                     this.NormaliseLinkFormat(item.links);
 
@@ -548,8 +548,19 @@ export class JsonApiHelper {
                     newResponse.WithData(DSUTILS.deepMixIn(new JsonApi.JsonApiData(''), item));
                 });
             } else {
-                this.NormaliseLinkFormat((<any>response.data).links);
-                newResponse.WithData(DSUTILS.deepMixIn(new JsonApi.JsonApiData(''), <any>response.data));
+                let item = (<any>response.data);
+                this.NormaliseLinkFormat(item.links);
+
+                for (var relation in item.relationships) {
+                    if (item.relationships[relation]) {
+                        this.NormaliseLinkFormat(item.relationships[relation].links);
+                        var isArray = DSUTILS.isArray(item.relationships[relation].data);
+                        item.relationships[relation] = DSUTILS.deepMixIn(new JsonApi.JsonApiRelationship(isArray), item.relationships[relation]);
+                    }
+                }
+
+                // Add JsonApiData
+                newResponse.WithSingleData(DSUTILS.deepMixIn(new JsonApi.JsonApiData(''), <any>response.data));
             }
         }
         if (response.links) {
@@ -575,14 +586,26 @@ export class JsonApiHelper {
         var jsDataJoiningTables = {};
 
         //Store data in a type,id key pairs
-        DSUTILS.forEach(newResponse.data, (item: JsonApi.JsonApiData) => {
-            data[item.type] = data[item.type] || {};
-            data[item.type][item.id] = this.DeserializeJsonApiData(options, item, jsDataJoiningTables);
+        if (DSUTILS.isArray(newResponse.data)) {
+            DSUTILS.forEach(<JsonApi.JsonApiData[]>newResponse.data, (item: JsonApi.JsonApiData) => {
+                data[item.type] = data[item.type] || {};
+                data[item.type][item.id] = this.DeserializeJsonApiData(options, item, jsDataJoiningTables);
 
-            // Data section is returned to js data so does not need to be inserted again from anywhere else!!
-            var metaData = MetaData.TryGetMetaData(data[item.type][item.id]);
-            metaData.incrementReferenceCount();
-        });
+                // Data section is returned to js data so does not need to be inserted again from anywhere else!!
+                var metaData = MetaData.TryGetMetaData(data[item.type][item.id]);
+                metaData.incrementReferenceCount();
+            });
+        } else {
+            let item: JsonApi.JsonApiData = <JsonApi.JsonApiData>newResponse.data;
+            if (item) {
+                data[item.type] = data[item.type] || {};
+                data[item.type][item.id] = this.DeserializeJsonApiData(options, item, jsDataJoiningTables);
+
+                // Data section is returned to js data so does not need to be inserted again from anywhere else!!
+                var metaData = MetaData.TryGetMetaData(data[item.type][item.id]);
+                metaData.incrementReferenceCount();
+            }
+        }
 
         // Attach liftime events
         JsonApiHelper.AssignLifeTimeEvents(options.def());
@@ -749,16 +772,28 @@ export class JsonApiHelper {
 
         // Copy top level objects
         // This is an array of top level objects with child, object references and included objects
-        var jsDataArray = [];
         if (data) {
-            DSUTILS.forEach(newResponse.data, (item: JsonApi.JsonApiData) => {
-                if (data[item.type] && data[item.type][item.id]) {
-                    jsDataArray.push(data[item.type][item.id]);
+
+            var jsDataArray = [];
+            if (DSUTILS.isArray(newResponse.data)) {
+                DSUTILS.forEach(<JsonApi.JsonApiData[]>newResponse.data, (item: JsonApi.JsonApiData) => {
+                    if (data[item.type] && data[item.type][item.id]) {
+                        jsDataArray.push(data[item.type][item.id]);
+                    }
+                });
+                return new DeSerializeResult(jsDataArray, newResponse);
+            } else {
+                if (newResponse.data) {
+                    var item = <JsonApi.JsonApiData>newResponse.data;
+                    if (data[item.type] && data[item.type][item.id]) {
+                        return new DeSerializeResult(data[item.type][item.id], newResponse);
+                    }
+                } else {
+                    return new DeSerializeResult(null, newResponse);
                 }
-            });
+            }
         }
 
-        return new DeSerializeResult(jsDataArray, newResponse);
     }
 
     private static RelationshipVisitor(data: any, options: SerializationOptions,
@@ -1106,8 +1141,13 @@ export class JsonApiHelper {
                             ', failed to load relationship named: ' + relationName +
                             '.Your js-data store configuration does not match your jsonapi data structure');
                     } else {
-                        // Add relationship to meta data, so that we can use this to lazy load relationship as requiredin the future
-                        metaData.WithRelationshipLink(relationshipDef.localField, JSONAPI_RELATED_LINK, relationshipDef.relation, relationship.FindLinkType(JSONAPI_RELATED_LINK));
+                        // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
+                        metaData.WithRelationshipLink(
+                            relationshipDef.localField,
+                            JSONAPI_RELATED_LINK,
+                            relationshipDef.relation,
+                            relationship.FindLinkType(JSONAPI_RELATED_LINK)
+                        );
                     }
 
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"
