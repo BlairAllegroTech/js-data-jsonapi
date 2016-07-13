@@ -290,4 +290,89 @@ describe('Update Tests', function () {
             });
         });
     });
+
+    describe('DS#updateAll', function () {
+        var ds;
+        var testData = { config: {} };
+
+        beforeEach(function () {
+            //Create js-data
+            ds = new JSData.DS();
+            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                queryTransform: queryTransform
+            });
+
+            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+
+            // Configure js-data resources
+            testData.config.Article = ds.defineResource({
+                name: 'article',
+                idAttribute: 'id',
+                relations: {
+
+                    hasOne: {
+                        author: {
+                            localField: 'author',
+                            foreignKey: 'articleid'
+                        }
+                    }
+                }
+            });
+
+            testData.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+                relations: {
+                    belongsTo: {
+                        article: {
+                            localField: 'article',
+                            localKey: 'articleid'
+                        }
+                    }
+                }
+            });
+        });
+
+        it('should make a POST request with an array', function () {
+            // Support for http://jsonapi-rc3.herokuapp.com/extensions/bulk/#creating-multiple-resources
+            // In js-data there is currently no method "create" which allows to make multiple
+            // objects. For this purpose it is suggested to use the operation "updateAll" and
+            // force the POST method.
+            var _this = this;
+
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length);
+                assert.equal(_this.requests[0].url, 'author');
+                assert.equal(_this.requests[0].method, 'POST');
+                assert.isDefined(_this.requests[0].requestHeaders);
+
+                var response = { data: [
+                    { type: 'author', attributes: { name: 'Rob', age: 36 } },
+                    { type: 'author', attributes: { name: 'Bob', age: 63 } }]
+                };
+                assert.equal(_this.requests[0].requestBody, JSON.stringify(response));
+
+                response.data[0].id = '10';
+                response.data[1].id = '11';
+
+                _this.requests[0].respond(201, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response));
+            }, 30);
+
+            return ds.updateAll('author', [{ name: 'Rob', age: 36 }, { name: 'Bob', age: 63 }], {}, { method: 'POST' }).then(function (data) {
+                assert.isDefined(data, 'Result Should exist');
+                assert.isArray(data, 'Result should be a list');
+                assert.equal(data[0].name, 'Rob');
+                assert.equal(data[1].name, 'Bob');
+
+                var rob_author = testData.config.Author.get(10);
+                assert.isDefined(rob_author, 'Author Rob should be in DS');
+                assert.equal(rob_author.name, data[0].name);
+
+                var bob_author = testData.config.Author.get(11);
+                assert.isDefined(bob_author, 'Author Bob should be in DS');
+                assert.equal(bob_author.name, data[1].name);
+            });
+
+        });
+    });
 });
