@@ -389,7 +389,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         }
 
         let localOptions = this.configureSerializers(options);
-        if (localOptions.jsonApi.usePATCH === true) {
+        if (!localOptions.method && localOptions.jsonApi.usePATCH === true) {
             // Use Jsonapi PATCH symantics
             localOptions.method = 'patch';
         }
@@ -405,7 +405,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     public updateAll(config: JSData.DSResourceDefinition<any>, attrs: Object, params?: JSData.DSFilterArg, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
         let localOptions = this.configureSerializers(options);
 
-        if (localOptions.jsonApi.usePATCH === true) {
+        if (!localOptions.method && localOptions.jsonApi.usePATCH === true) {
             // Use Jsonapi PATCH symantics
             localOptions.method = 'patch';
         }
