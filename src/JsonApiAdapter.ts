@@ -25,7 +25,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         return this.adapter.defaults;
     }
 
-    private serialize: (resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object) => any;
+    private serialize: (resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object, config: JsonApiAdapter.DSJsonApiAdapterOptions) => any;
     private deserialize: (resourceConfig: JSData.DSResourceDefinition<any>, data: JSData.DSHttpAdapterPromiseResolveType) => any;
 
     constructor(options?: JsonApiAdapter.DSJsonApiAdapterOptions) {
@@ -53,8 +53,8 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         }
 
         // Apply defaults
-        this.defaults.jsonApi = options.jsonApi || {};
-        this.DSUtils.fillIn(this.defaults.jsonApi, { usePATCH: true });
+        this.defaults.jsonApi = options.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
+        this.DSUtils.fillIn(this.defaults.jsonApi, { usePATCH: true, updateRelationships: false });
 
         // Override default get path implementation
         this.adapterGetPath = this.adapter.getPath;
@@ -72,9 +72,9 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         };
     }
 
-    SerializeJsonResponse(resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object): any {
+    SerializeJsonResponse(resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object, config: JsonApiAdapter.DSJsonApiAdapterOptions): any {
         var serializationOptions = new Helper.SerializationOptions(resourceConfig);
-        return Helper.JsonApiHelper.Serialize(serializationOptions, attrs);
+        return Helper.JsonApiHelper.Serialize(serializationOptions, attrs, config);
     }
 
     DeSerializeJsonResponse(resourceConfig: JSData.DSResourceDefinition<any>, response: JSData.DSHttpAdapterPromiseResolveType): any {
@@ -222,7 +222,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         */
     configureSerializers(options?: JSData.DSConfiguration): JsonApiAdapter.DSJsonApiAdapterOptions {
         var callOptions: JsonApiAdapter.DSJsonApiAdapterOptions = <JsonApiAdapter.DSJsonApiAdapterOptions>(this.DSUtils.copy(options) || {});
-        callOptions.jsonApi = callOptions.jsonApi || {};
+        callOptions.jsonApi = callOptions.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
 
         // Passed options take priority over defaults
         this.DSUtils.fillIn(callOptions.jsonApi, this.defaults.jsonApi);
@@ -236,11 +236,11 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         var serialize = callOptions['serialize'] || this.defaults.serialize;
         if (serialize) {
             callOptions['serialize'] = (resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object) => {
-                return serialize(resourceConfig, this.serialize(resourceConfig, attrs));
+                return serialize(resourceConfig, this.serialize(resourceConfig, attrs, callOptions));
             };
         } else {
             callOptions['serialize'] = (resourceConfig: JSData.DSResourceDefinition<any>, attrs: Object) => {
-                return this.serialize(resourceConfig, attrs);
+                return this.serialize(resourceConfig, attrs, callOptions);
             };
         }
 

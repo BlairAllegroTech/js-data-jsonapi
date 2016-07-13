@@ -46,7 +46,8 @@
         _o: (obj: Object) => boolean;
         copy: <T>(source: T) => T;
         isArray: (obj: any) => boolean;
-        forEach: <T>(source: Array<T>, item: (item: T, index?: number, source?: Array<T>) => boolean | void) => void;
+        forEach: <T>(source: Array<T>, callback: (item: T, index?: number, source?: Array<T>) => boolean | void) => void;
+        forOwn: (source: any, callback: (value: any, key: string) => boolean | void) => void;
         resolveId: (definition, idOrInstance: any) => any;
         isString: (value: any) => boolean;
 

@@ -67,7 +67,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                     }
                 }), 'Json data serialized to jsonApi data correctly, with client id');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(Post, { Id: '5', author: 'John', age: 32 }).then(function (data) {

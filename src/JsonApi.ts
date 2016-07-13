@@ -117,11 +117,6 @@ export class JsonApiData {
         return this;
     }
 
-    WithType(type: string): JsonApiData {
-        this.type = type;
-        return this;
-    }
-
     WithRelationship(relationName: string, relation: JsonApiRelationship) {
         this.relationships = this.relationships || {};
         this.relationships[relationName] = relation;
@@ -153,7 +148,7 @@ export class JsonApiRelationship {
     }
 
     WithData(type: string, id: string): JsonApiRelationship {
-        if (Array.isArray(this.data)) {
+        if (this.data && Array.isArray(this.data)) {
             (<JsonApiData[]>this.data).push(new JsonApiData(type).WithId(id));
         } else {
             this.data = new JsonApiData(type).WithId(id);

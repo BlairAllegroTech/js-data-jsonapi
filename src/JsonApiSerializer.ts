@@ -381,17 +381,15 @@ class DeSerializeResult {
     }
 }
 
-function LogInfo(message: string, data: any[] = undefined): void {
+function LogInfo(message: string, data?: any[]): void {
     if (console) {
-        var c: Console = console;
-        c.log(message, data);
+        (<Console>console).log(message, data);
     }
 }
 
-function LogWarning(message: string, data: any[] = undefined): void {
+function LogWarning(message: string, data?: any[]): void {
     if (console) {
-        var c: Console = console;
-        c.warn(message, data);
+        (<Console>console).warn(message, data);
     }
 }
 
@@ -481,16 +479,16 @@ export class JsonApiHelper {
     }
 
     // Serialize js-data object as JsonApi request
-    public static Serialize(options: SerializationOptions, contents: any): JsonApi.JsonApiRequest {
+    public static Serialize(options: SerializationOptions, attrs: any, config: JsonApiAdapter.DSJsonApiAdapterOptions): JsonApi.JsonApiRequest {
         var result = new JsonApi.JsonApiRequest();
-        if (DSUTILS.isArray(contents)) {
+        if (DSUTILS.isArray(attrs)) {
             //Add Data as array
-            DSUTILS.forEach(contents, (item: Object) => {
-                result.WithData(this.ObjectToJsonApiData(options, item));
+            DSUTILS.forEach(attrs, (item: Object) => {
+                result.WithData(this.ObjectToJsonApiData(options, item, config));
             });
         } else {
             // JsonAPI single object
-            result.data = <any>this.ObjectToJsonApiData(options, contents);
+            result.data = <any>this.ObjectToJsonApiData(options, attrs, config);
         }
         return result;
     }
@@ -693,11 +691,11 @@ export class JsonApiHelper {
 
         var toOnePlaceHolderVisitor = (data: Object, localField: string, opt: SerializationOptions): any => {
             var val = data[localField];
-            if (val !== null && val.constructor === ModelPlaceHolder) {
-                let itemPlaceHolder = <ModelPlaceHolder>val;
+            if (val && val.constructor === ModelPlaceHolder) {
+                var itemPlaceHolder = <ModelPlaceHolder>val;
 
                 //If included or data or joining data contains the reference we are looking for then use it
-                let newItem = itemSelector(itemPlaceHolder);
+                var newItem = itemSelector(itemPlaceHolder);
 
                 if (newItem) {
                     // To avoid circular dependancies in the object graph that we send to jsData only include an object once.
@@ -722,7 +720,7 @@ export class JsonApiHelper {
                     }
                 } else {
                     //This item dosn't exist so create a model reference to it
-                    let newItem = <any>{};
+                    newItem = {};
 
                     // Replace item in array with plain object, but with Primary key or any foreign keys set
                     var itemOptions = options.getResource(itemPlaceHolder.type);
@@ -897,79 +895,59 @@ export class JsonApiHelper {
     }
 
     // Convert js-data object to JsonApi request
-    private static ObjectToJsonApiData(options: SerializationOptions, contents: Object): JsonApi.JsonApiData {
+    private static ObjectToJsonApiData(options: SerializationOptions, attrs: Object, config: JsonApiAdapter.DSJsonApiAdapterOptions): JsonApi.JsonApiData {
 
         if (!options.type) {
             throw new Error('Type required within options');
         }
 
-
         var data = new JsonApi.JsonApiData(options.type);
 
         //JsonApi id is always a string, it can be empty for a new unstored object!
-        if (contents[options.idAttribute]) {
-            data.id = contents[options.idAttribute];
+        if (attrs[options.idAttribute]) {
+            data.WithId(attrs[options.idAttribute]);
         }
 
-        for (var prop in contents) {
-            // Skip id attribute as it has already been copied to the id field out side of the attributes collection
-            // Todo skip any non-json api compliant tags
-            if (prop === options.idAttribute || prop === JSONAPI_META || prop.indexOf('$') >= 0 ) {
-                continue;
-            }
-
-
-            if (contents[prop] !== null) {
-                var childRelation = options.getChildRelation(prop);
-
-                if (DSUTILS.isArray(contents[prop])) {
-                    // To many relation
-                    if (childRelation) {
-                        //if (contents[prop][0] && contents[prop][0].hasOwnProperty(ISMODEL)) {
-
-                        var relationType = childRelation.type || 'MissingRelationType';
-                        if (relationType !== jsDataHasMany) {
-                            throw new Error('Data array encountered, expected this to be a to have a hasMany relationship defined in JSData but found, ' + relationType);
-                        }
-
-                        var resourceDef = options.getResource(childRelation.relation);
-
-                        //This is a relationship so add data as relationsship as apposed to inling data structure                        
-                        var relationship = new JsonApi.JsonApiRelationship(true);
-                        DSUTILS.forEach(contents[prop], (item: any) => {
-                            var type = resourceDef.type;
-                            var id = item[resourceDef.idAttribute];
-                            relationship.WithData(type, id);
-                        });
-
-                        data.WithRelationship(prop, relationship);
-
-                    } else {
-                        // Add inline data struture / array
-                        data.WithAttribute(prop, contents[prop]);
-                    }
-                } else if (childRelation) {
-                    var resourceDef = options.getResource(childRelation.relation);
-
-                    var type = childRelation.type;
-                    var id = contents[resourceDef.idAttribute];
-
-                    var relation = new JsonApi.JsonApiRelationship(false);
-                    relation.data = new JsonApi.JsonApiData(type)
-                        .WithId(id);
-
-                    if (childRelation.type === jsDataHasMany) {
-                        data.WithRelationship(prop, relation);
-                    } else {
-                        data.relationships[prop] = relation;
-                    }
-                } else {
-                    data.WithAttribute(prop, contents[prop]);
+        // Take object attributes
+            DSUTILS.forOwn(attrs, (value: any, prop: string) => {
+                // Skip id attribute as it has already been copied to the id field out side of the attributes collection
+                // Skip any non-json api compliant tags
+                if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
+                    data.WithAttribute(prop, value);
                 }
-            } else {
-                LogWarning('Unexpected null value in ObjectToData()', [prop]);
+            });
+
+            // Get object related data
+            if (config.jsonApi.updateRelationships === true) {
+                DSUTILS.forEach(DSUTILS.get<JSData.RelationDefinition[]>(options.def(), 'relationList'), (relation: JSData.RelationDefinition) => {
+                    // Get child definition
+                    var relatedDef = options.getResource(relation.relation);
+
+                    if (relation.type === jsDataHasMany) {
+                        var relatedObjects = DSUTILS.get<any[]>(attrs, relation.localField);
+                        if (relatedObjects) {
+                            //This is a relationship so add data as relationsship as apposed to inling data structure
+                            var relationship = new JsonApi.JsonApiRelationship(true);
+                            DSUTILS.forEach(relatedObjects, (item: any) => {
+                                relationship.WithData(relation.relation, item[relatedDef.idAttribute]);
+                            });
+
+                            data.WithRelationship(relation.localField, relationship);
+                        }
+                    }
+
+                    if (relation.type === jsDataHasOne) {
+                        var relatedObject = DSUTILS.get<any>(attrs, relation.localField);
+                        if (relatedObject) {
+                            var relationship = new JsonApi.JsonApiRelationship(false)
+                                .WithData(relation.relation, relatedObject[relatedDef.idAttribute]);
+
+                            data.WithRelationship(relation.localField, relationship);
+                        }
+                    }
+                });
             }
-        }
+
         return data;
     }
 

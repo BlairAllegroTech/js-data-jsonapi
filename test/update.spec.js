@@ -157,35 +157,36 @@ describe('Update Tests', function () {
             ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
 
             // Configure js-data resources
+            testData.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+                relations: {
+                    hasMany: {
+                        article: {
+                            localField: 'articles',
+                            foreignKey: 'authorid'
+                        }
+                    }
+                }
+            });
+
             testData.config.Article = ds.defineResource({
                 name: 'article',
                 idAttribute: 'id',
                 relations: {
-                    
                     hasOne: {
                         author: {
                             localField: 'author',
-                            foreignKey: 'articleid'
+                            localKey: 'authorid'
                         }
                     }
                 }
             });
             
-            testData.config.Author = ds.defineResource({
-                name: 'author',
-                idAttribute: 'id',
-                relations: {
-                    belongsTo: {
-                        article: {
-                            localField: 'article',
-                            localKey: 'articleid'
-                        }
-                    }
-                }
-            });
+            
         });
 
-        it('should save data to adapter', function () {
+        it('should save data to adapter, WITHOUT relationships', function () {
             var _this = this;
             
             setTimeout(function () {
@@ -193,10 +194,8 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].url, 'author');
                 assert.equal(_this.requests[0].method, 'GET');
 
-                var response = { data: { id: '1', type: 'author', attributes: { name: 'Bob', age: 30 } } };//links: {}, relationships: {}
-
-
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response));
+                var response = { data: { id: '1', type: 'author', attributes: { name: 'Bob', age: 30 } } };
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
             }, 30);
 
             return testData.config.Author.findAll().then(function (data) { 
@@ -215,6 +214,78 @@ describe('Update Tests', function () {
                 return ds.save('author', author.id).then(function (data) {
                     assert.isDefined(data, 'Result Sould exists');
                     assert.equal(data.name, 'New Author');
+                });
+            });
+        });
+
+        it('should save data to adapter, WITH relationships', function () {
+            var _this = this;
+            var response = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                .WithData(
+                new DSJsonApiAdapter.JsonApi.JsonApiData('author')
+                        .WithId('1')
+                        .WithAttribute('name', 'Bob')
+                        .WithAttribute('age', 30)
+                        .WithLink('self', 'api/author/1')
+                        .WithRelationship('articles',
+                            new DSJsonApiAdapter.JsonApi.JsonApiRelationship(false)
+                                .WithLink('related', 'api/author/1/articles')
+                                .WithData('article', '1')
+                )
+            )
+                .WithIncluded(
+                new DSJsonApiAdapter.JsonApi.JsonApiData('article')
+                        .WithId('1')
+                        .WithAttribute('name', 'my book')
+                        .WithLink('self', 'api/article/1')
+            );
+
+            setTimeout(function () {
+                var index = _this.requests.length-1;
+                assert.equal(index+1, _this.requests.length);
+                assert.equal(_this.requests[index].url, 'author');
+                assert.equal(_this.requests[index].method, 'GET');
+                
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
+            }, 30);
+            
+            return testData.config.Author.findAll().then(function (data) {
+
+                setTimeout(function () {
+                    var index = _this.requests.length - 1;
+                    assert.equal(2, _this.requests.length);
+                    assert.equal(_this.requests[index].url, 'api/author/1');
+                    assert.equal(_this.requests[index].method, 'PATCH');
+                    
+                    var request = DSUtils.fromJson(_this.requests[1].requestBody);
+                    assert.isDefined(request.data.relationships, 'Relationships should be defined');
+                    assert.isDefined(request.data.relationships.articles, 'Relationships data should contain "articel"');
+                    assert.deepEqual(request.data.relationships.articles.data, [{id:'1', type:'article'}],  'Relationships should have been sent');
+                    
+                    _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, _this.requests[index].requestBody);
+                }, 30);
+                
+
+                var author = testData.config.Author.get(1);
+                assert.isDefined(author, 'Author should be in DS');
+                author.name = 'New Author';
+                return ds.save('author', author.id, {jsonApi: { updateRelationships: true }}).then(function (data) {
+                    assert.isDefined(data, 'Result Should exists');
+                    assert.equal(data.name, 'New Author');
+                    
+                    setTimeout(function () {
+                        var index = _this.requests.length - 1;
+                        assert.equal(3, _this.requests.length);
+                        assert.equal(_this.requests[index].url, 'author/1'); //This reverted backto default as we didn't supply a self link in the response
+                        assert.equal(_this.requests[index].method, 'PATCH');
+                        
+                        var request = DSUtils.fromJson(_this.requests[index].requestBody);
+                        assert.isUndefined(request.data.relationships, 'Relationships should NOT defined');
+                        
+                        _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, _this.requests[1].requestBody);
+                    }, 30);
+
+                    return ds.save('author', author.id, { jsonApi: { updateRelationships: false } });
                 });
             });
         });

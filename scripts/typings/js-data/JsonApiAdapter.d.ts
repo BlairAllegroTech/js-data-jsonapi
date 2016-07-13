@@ -6,6 +6,9 @@ declare module JsonApiAdapter {
         // JsonApi does not support PUT semantics, so use PATCH by default
         usePATCH?: boolean;
 
+        // Set to true force objects relations to be sent when updating an objet
+        updateRelationships: boolean,
+
         // Do not set globally, used to override the url for a resource
         // This is set internally using the self link of objects or relationships
         jsonApiPath?: string;
