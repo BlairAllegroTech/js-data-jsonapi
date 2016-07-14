@@ -15,7 +15,7 @@
                 .WithMeta('Destroy', 'Ok');
             delete responseData.data;
             
-            var response = JSON.stringify(responseData);
+            var response =  DSUtils.toJson(responseData);
             _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, response);
         }, 30);
         

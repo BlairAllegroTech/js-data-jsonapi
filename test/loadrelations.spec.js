@@ -20,7 +20,7 @@
             assert.isDefined(_this.requests[0].requestHeaders);
             assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
-            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(container));
+            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(container));
         }, 30);
 
         return UserContainer.find(1).then(function (data) {
@@ -50,7 +50,7 @@
                 assert.equal(_this.requests[1].url, 'http://xxx/container/1/posts');
                 assert.equal(_this.requests[1].method, 'GET');
                 
-                _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(postList));
+                _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(postList));
             }, 30);
 
             var parent = data[0];
@@ -85,7 +85,7 @@
                     assert.equal(_this.requests[2].url, 'http://xxx/container/1/posts');
                     assert.equal(_this.requests[2].method, 'GET');
 
-                    _this.requests[2].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(postList));
+                    _this.requests[2].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(postList));
                 }, 30);
 
                 return Post.findAll({ containerid: parent.Id }).then(function (data) {
@@ -125,7 +125,7 @@
             assert.isDefined(_this.requests[0].requestHeaders);
             assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
             
-            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(container));
+            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(container));
         }, 30);
         
         return UserContainer.find(1).then(function (data) {
@@ -155,7 +155,7 @@
                 assert.equal(_this.requests[1].url, 'http://xxx/container/1/posts');
                 assert.equal(_this.requests[1].method, 'GET');
 
-                _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(postList));
+                _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(postList));
             }, 30);
 
             var parent = data[0];
@@ -200,7 +200,7 @@
             assert.isDefined(_this.requests[0].requestHeaders);
             assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
             
-            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(container));
+            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(container));
         }, 30);
         
         return UserContainer.find(1).then(function (data) {
@@ -230,7 +230,7 @@
                 assert.equal(_this.requests[1].url, 'http://xxx/container/1/posts');
                 assert.equal(_this.requests[1].method, 'GET');
                 
-                _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(postList));
+                _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(postList));
             }, 30);
             
             //setTimeout(function () {

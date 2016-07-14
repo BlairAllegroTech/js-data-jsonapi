@@ -12,7 +12,7 @@ describe('find', function () {
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
             }, 30);
             
             
@@ -28,7 +28,7 @@ describe('find', function () {
                     //assert.isDefined(_this.requests[1].requestHeaders);
                     //assert.include(_this.requests[1].requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
                     
-                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
                 }, 30);
                 
                 return dsHttpAdapter.find(Post, 1, { basePath: 'api2' }).then(function (data) {
@@ -51,7 +51,7 @@ describe('find', function () {
                 //assert.isDefined(_this.requests[0].requestHeaders);
                 //assert.include(_this.requests[0].requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
             }, 30);
             
             return Post.find(1, { urlPath: '/foo/bar/beep/boop/1' }).then(function (data) {
@@ -79,7 +79,7 @@ describe('find', function () {
                 }, _this.requests[0].requestHeaders);
                 
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.find(Post, 1).then(function (data) {
@@ -136,7 +136,7 @@ describe('find', function () {
         //        assert.equal(1, _this.requests.length);
         //        assert.equal(_this.requests[0].url, 'things/1.xml');
         //        assert.equal(_this.requests[0].method, 'GET');
-        //        _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify({ id: 1 }));
+        //        _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson({ id: 1 }));
         //    }, 30);
             
         //    return dsHttpAdapter.find(Thing, 1).then(function () {
@@ -145,7 +145,7 @@ describe('find', function () {
         //            assert.equal(2, _this.requests.length);
         //            assert.equal(_this.requests[1].url, 'api/posts/1.json');
         //            assert.equal(_this.requests[1].method, 'GET');
-        //            _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify({ id: 1 }));
+        //            _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson({ id: 1 }));
         //        }, 30);
                 
         //        return otherAdapter.find(Post, 1);
@@ -164,7 +164,7 @@ describe('find', function () {
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(DataWithRelation.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(DataWithRelation.jsonApiData));
             }, 30);
             
             
@@ -187,7 +187,7 @@ describe('find', function () {
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(DataWithRelation.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(DataWithRelation.jsonApiData));
             }, 30);
             
             return UserContainer.find(1, { urlPath: '/container/1' }).then(function (data) {
@@ -211,7 +211,7 @@ describe('find', function () {
                 assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
                 
                 DataWithRelation.jsonApiData.included[0].attributes.country = 'New Zealand';
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(DataWithRelation.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(DataWithRelation.jsonApiData));
             }, 30);
             
             return UserContainer.find(1, { urlPath: '/container/1' }).then(function (data) {
@@ -229,7 +229,7 @@ describe('find', function () {
                     delete DataWithRelation.jsonApiData.included[0].attributes.country;
                     DataWithRelation.jsonApiData.included[0].attributes.age = 25;
                     DataWithRelation.jsonApiData.included[0].attributes.height = '1.7m';
-                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(DataWithRelation.jsonApiData));
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(DataWithRelation.jsonApiData));
                 }, 30);
                 
                 return UserContainer.find(1, { urlPath: '/container/1', bypassCache: true }).then(function (data) {
@@ -262,7 +262,7 @@ describe('find', function () {
                     )
                 );
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(request));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(request));
             }, 30);
             
             return UserContainer.find(1).then(function (data) {
@@ -351,7 +351,7 @@ describe('find', function () {
                     //)   
                     );
                     
-                    var responseString = JSON.stringify(request);
+                    var responseString =  DSUtils.toJson(request);
                     _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, responseString);
                 }, 30);
                 
@@ -372,10 +372,10 @@ describe('find', function () {
                         var request = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                         .WithLink('self', 'api/article/1/relationships/author')
                         .WithLink('related', 'api/article/1/author');
-                        request.data = null;
+                        request.data = [];
                         //.WithData(null);
                         
-                        var responseString = JSON.stringify(request);
+                        var responseString =  DSUtils.toJson(request);
                         _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, responseString);
                     }, 30);
                     
@@ -433,7 +433,7 @@ describe('find', function () {
                 assert.equal(_this.requests[0].method, 'GET');
                 
                 var response = { data: { id: '1', type: 'article', attributes: { name: 'My Book' } } };
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response));
             }, 30);
             
             return testData.config.Article.find('1', { cacheResponse: true }).then(function (data) {
@@ -454,7 +454,7 @@ describe('find', function () {
                 assert.equal(_this.requests[0].method, 'GET');
                 
                 var response = { data: { id: '1', type: 'article', attributes: { name: 'My Book' } } };
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response));
             }, 30);
             
             return testData.config.Article.find('1', { cacheResponse: false}).then(function (data) {

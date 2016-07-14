@@ -37,7 +37,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                 };
                 
                 assert.deepEqual(request.data, expectedData, 'Json data serialized to jsonApi data correctly, without client id');
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(Post, { author: 'John', age: 32 }).then(function (data) {
@@ -97,7 +97,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(Post, { author: 'John', age: 32 }).then(function (data) {
@@ -121,7 +121,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                         }
                     }));
                     
-                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response.jsonApiData));
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response.jsonApiData));
                 }, 30);
                 
                 return dsHttpAdapter.create(Post, { author: 'John', age: 32 }, { basePath: 'api2' }).then(function (data) {
@@ -153,7 +153,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(Post, { author: 'John', age: 32 }, { cacheResponse: false }).then(function (data) {
@@ -185,7 +185,7 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                         }
                 }), 'Json data serialized to jsonApi data correctly');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(Post, { author: 'John', age: 32 }).then(function (data) {

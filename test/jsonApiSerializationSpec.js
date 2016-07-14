@@ -41,7 +41,7 @@
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(testData.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(TestUser, { author: 'John', age: 31 }, { basePath: 'api' }).then(function (data) {
@@ -79,7 +79,7 @@
                 }), 'Json data serialized to jsonApi data correctly');
                 
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(testData.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(TestUser, { author: 'John', age: 32 }, { basePath: 'api' }).then(function (data) {
@@ -113,7 +113,7 @@
                 // Include json api self link, as required by Jsonapi spec
                 testData.jsonApiData.data[0].WithLink('self', '/container/1/post/2');
                 testData.model[0]['containerid'] = '1';
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(testData.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(Post, { author: 'John', age: 31 }).then(function (data) {
@@ -142,7 +142,7 @@
             .WithError(error);
             
             setTimeout(function () {
-                _this.requests[0].respond(500, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(errorResponse));
+                _this.requests[0].respond(500, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(errorResponse));
             }, 30);
             
             return dsHttpAdapter.create(Post, { author: 'John', age: 30 })
@@ -197,8 +197,8 @@
                     }
                 }), 'Json data serialized to jsonApi data correctly');
                 
-                var json = JSON.stringify(testData.jsonApiData);
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(testData.jsonApiData));
+                var json =  DSUtils.toJson(testData.jsonApiData);
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.create(TestUser, { author: 'John', age: 32 }, { basePath: 'api' }).then(function (data) {
@@ -274,7 +274,7 @@
                         .WithRelationship("article", articleToOneRelation)
                 );
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(req));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(req));
             }, 30);
             
             return dsHttpAdapter.update(testData.config.Author, '1', { id: '1', name: 'John' }, { basePath: 'api' }).then(function (data) {
@@ -368,7 +368,7 @@
                         .WithRelationship("article", articleToOneRelation)
                 );
 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(req));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(req));
             }, 30);
                 
             return dsHttpAdapter.update(testData.config.Author, '1', {id:'1', name: 'John'}, { basePath: 'api' }).then(function (data) {
@@ -416,7 +416,7 @@
             
             setTimeout(function () {
                 assert.equal(1, _this.requests.length);
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(test.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(test.jsonApiData));
             }, 30);
             
             return test.config.User.create({ author: 'John', age: 32 }).then(function (data) {
@@ -476,7 +476,7 @@
                 var request = JSON.parse(_this.requests[0].requestBody);
                 request.id = 1;
 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/json' }, JSON.stringify(request));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/json' },  DSUtils.toJson(request));
             }, 30);
             
             return test.config.User.create({ author: 'John', age: 32 }).then(function (data) {
@@ -506,7 +506,7 @@
                 var request = JSON.parse(_this.requests[0].requestBody);
                 request.data.id = 1;
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(request));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(request));
             }, 30);
             
             return test.config.User.create({ author: 'John', age: 32 }).then(function (data) {

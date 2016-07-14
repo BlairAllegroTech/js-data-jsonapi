@@ -10,10 +10,16 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].method, 'PATCH');
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: '1', type: 'posts', attributes: { author: 'John', age: 30 } } }));
+                assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({
+                    data: {
+                        id: '1', 
+                        type: 'posts', 
+                        attributes: { author: 'John', age: 30 }
+                    }
+                }));
                 
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }).then(function (data) {
@@ -28,9 +34,9 @@ describe('Update Tests', function () {
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
                     assert.include(_this.requests[1].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                    assert.equal(_this.requests[1].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
+                    assert.equal(_this.requests[1].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
                     
-                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
 
                 }, 30);
                 
@@ -53,10 +59,10 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].method, 'PUT');
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: '1', type: 'posts', attributes: { author: 'John', age: 30 } } }));
+                assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({ data: { id: '1', type: 'posts', attributes: { author: 'John', age: 30 } } }));
                 
                 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
             }, 30);
             
             return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }, { jsonApi: { usePATCH: false } }).then(function (data) {
@@ -71,9 +77,9 @@ describe('Update Tests', function () {
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
                     assert.include(_this.requests[1].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                    assert.equal(_this.requests[1].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
+                    assert.equal(_this.requests[1].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
                     
-                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(p1.jsonApiData));
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
 
                 }, 30);
                 
@@ -96,7 +102,7 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].method, 'PUT');
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
+                assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
                 
                 p1.model.Id = '1';
                 _this.requests[0].respond(204);//{ 'Content-Type': 'application/vnd.api+json' }
@@ -119,7 +125,7 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].method, 'PATCH');
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                assert.equal(_this.requests[0].requestBody, JSON.stringify({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
+                assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
                 
                 p1.model.Id = '1';
                 _this.requests[0].respond(204);//{ 'Content-Type': 'application/vnd.api+json' }
@@ -194,7 +200,7 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].url, 'author');
                 assert.equal(_this.requests[0].method, 'GET');
 
-                var response = { data: { id: '1', type: 'author', attributes: { name: 'Bob', age: 30 } } };
+                var response = { data: [{ id: '1', type: 'author', attributes: { name: 'Bob', age: 30 } }] };
                 _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
             }, 30);
 
@@ -350,12 +356,12 @@ describe('Update Tests', function () {
                     { type: 'author', attributes: { name: 'Rob', age: 36 } },
                     { type: 'author', attributes: { name: 'Bob', age: 63 } }]
                 };
-                assert.equal(_this.requests[0].requestBody, JSON.stringify(response));
+                assert.equal(_this.requests[0].requestBody,  DSUtils.toJson(response));
 
                 response.data[0].id = '10';
                 response.data[1].id = '11';
 
-                _this.requests[0].respond(201, { 'Content-Type': 'application/vnd.api+json' }, JSON.stringify(response));
+                _this.requests[0].respond(201, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response));
             }, 30);
 
             return ds.updateAll('author', [{ name: 'Rob', age: 36 }, { name: 'Bob', age: 63 }], {}, { method: 'POST' }).then(function (data) {
