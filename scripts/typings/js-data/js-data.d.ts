@@ -72,6 +72,8 @@ declare module JSData {
             hasOne?: Object;
             belongsTo?: Object;
         };
+        // TODO: ROB 20160718 Submit a pull request to https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/js-data/js-data.d.ts
+        relationList: RelationDefinition[];
 
         getResource: (resourceName: string) => DSResourceDefinitionConfiguration;
     }
