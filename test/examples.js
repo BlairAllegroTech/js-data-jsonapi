@@ -1,9 +1,9 @@
 ﻿describe('Test Examples', function () {
-    
+
     var ds;
     var example = {};
-    
-    
+
+
     beforeEach(function () {
         ds = new JSData.DS();
         var dsAdapter = new DSJsonApiAdapter.JsonApiAdapter({
@@ -11,13 +11,13 @@
         });
         ds.registerAdapter('jsonApi', dsAdapter, { default: true });
     });
-    
+
 
     describe('oneToMany Example', function () {
-                
+
         // Load onetomany example
         beforeEach(function () {
-            
+
             // Configure
             example.config = examples.oneToMany.config(ds);
 
@@ -25,23 +25,28 @@
                 example.json = json;
             });
         });
-        
+
 
         it('Should Deserialize the sample oneToMany Json', function () {
             var _this = this;
-            
+
             setTimeout(function () {
                 assert.equal(1, _this.requests.length);
-                
+
                 _this.requests[_this.requests.length-1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, example.json);
             }, 30);
-            
+
             return example.config.article.find(1).then(function (data) {
                 assert.isDefined(example.config.article.get(1), 'Expect article#1 to exist');
                 assert.isDefined(example.config.comment.get(1), 'Expect comment#1 to exist');
                 assert.isDefined(example.config.comment.get(2), 'Expect comment#2 to exist');
                 assert.isDefined(example.config.author.get(9), 'Expect author#9 to exist');
-                
+
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.author, 'json api relationship for one "author", should exist');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.comments, 'json api relationship for many "comments", should exist');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.image, 'json api relationship for one "image", should exist');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.tags, 'json api relationship for many "tags", should exist');
+
                 var article = example.config.article.get(1);
                 var author = example.config.author.get(9);
                 var comment1 = example.config.comment.get(1);
@@ -60,13 +65,13 @@
 
 
     describe('manyToMany Example', function () {
-        
+
         // Load manytomany example
         beforeEach(function () {
-            
+
             // Configure
             example.config = examples.manyToMany.config(ds);
-            
+
             return loadJSON('/base/examples/manyToMany/manyToMany.json').then(function (json) {
                 example.json = json;
             });
@@ -74,13 +79,13 @@
 
         it('Should Deserialize the sample manyToMany Json', function () {
             var _this = this;
-            
+
             setTimeout(function () {
                 assert.equal(1, _this.requests.length);
-                
+
                 _this.requests[_this.requests.length - 1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, example.json);
             }, 30);
-            
+
             return example.config.article.find(1).then(function (data) {
                 var article = example.config.article.get(1);
                 var person1 = example.config.person.get(1);
@@ -98,9 +103,9 @@
                 assert.strictEqual(article.authors[0].article, article, 'Expect article_person person to be person 1');
                 assert.strictEqual(article.authors[0].author, person1, 'Expect article_person person to be person 1');
                 assert.strictEqual(article.authors[1].author, person2, 'Expect article_person person to be person 2');
-                
+
                 assert.strictEqual(article.authors[0].author.articles[0].article, article, 'Expect article stored in joining table to be same article');
-                
+
                 assert.isDefined(person1.articles[0], 'Expect person1.articles joining data to be populated');
                 assert.strictEqual(person1.articles[0].author, person1, 'Expect person1 author to be person1');
                 assert.strictEqual(person1.articles[0].article, article, 'Expect person1 article to be article1');
@@ -113,5 +118,5 @@
 
         });
     });
- 
+
 });

@@ -1,7 +1,7 @@
 ﻿before(function () {
-    examples = examples || {};                
+    examples = examples || {};
     examples.oneToMany = examples.oneToMany || {};
-    
+
     // Here:
     // Article (1) <--> (1) Author
     // Article (1) <--> (*) Comment
@@ -18,17 +18,25 @@
                         localField: 'author',
                         foreignKey: 'articleid'
                     },
+                    image: {
+                        localField: 'image',
+                        localKey: 'imageid'
+                    }
                 },
-                
+
                 hasMany: {
                     comment: {
                         localField: 'comments',
+                        foreignKey: 'articleid'
+                    },
+                    tag: {
+                        localField: 'tags',
                         foreignKey: 'articleid'
                     }
                 }
             }
         });
-        
+
         var Author = ds.defineResource({
             name: 'author',
             idAttribute: 'id',
@@ -42,7 +50,7 @@
                 }
             }
         });
-        
+
         var Comment = ds.defineResource({
             name: 'comment',
             idAttribute: 'id',
@@ -63,11 +71,34 @@
             }
         });
 
+        var Image = ds.defineResource({
+            name: 'image',
+            relations: {
+                belongsTo: {
+                    article: {
+                        localField: 'article',
+                        foreignKey: 'imageid'
+                    }
+                }
+            }
+        });
+
+        var Tag = ds.defineResource({
+            name: 'tag',
+            relations: {
+                belongsTo: {
+                    article: {
+                        localField: 'article',
+                        localKey: 'articleid'
+                    }
+                }
+            }
+        });
 
         return {
             article: Article,
             author: Author,
             comment: Comment
         };
-    }
+    };
 });
