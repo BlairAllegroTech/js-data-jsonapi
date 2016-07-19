@@ -22,7 +22,7 @@ describe('Update Tests', function () {
                 _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
             }, 30);
             
-            return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }).then(function (data) {
+            return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }, {changes:false}).then(function (data) {
                 // We are not testing meta data yet
                 ignoreMetaData(data);
                 
@@ -34,19 +34,19 @@ describe('Update Tests', function () {
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
                     assert.include(_this.requests[1].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                    assert.equal(_this.requests[1].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
+                    assert.equal(_this.requests[1].requestBody, DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
                     
-                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(p1.jsonApiData));
 
                 }, 30);
                 
-                return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }, { basePath: 'api2' });
-            }).then(function (data) {
-                // We are not testing meta data yet
-                ignoreMetaData(data);
-                
-                assert.deepEqual(data, p1.model, 'post 1 should have been updated#2');
-                assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
+                return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }, { basePath: 'api2', changes:false }).then(function (data) {
+                    // We are not testing meta data yet
+                    ignoreMetaData(data);
+                    
+                    assert.deepEqual(data, p1.model, 'post 1 should have been updated#2');
+                    assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
+                });
             });
         });
 
@@ -59,7 +59,9 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].method, 'PUT');
                 assert.isDefined(_this.requests[0].requestHeaders);
                 assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({ data: { id: '1', type: 'posts', attributes: { author: 'John', age: 30 } } }));
+                assert.equal(_this.requests[0].requestBody, DSUtils.toJson(
+                    { data: { id: '1', type: 'posts', attributes: { author: 'John', age: 30 } } })
+                );
                 
                 
                 _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
@@ -77,19 +79,21 @@ describe('Update Tests', function () {
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
                     assert.include(_this.requests[1].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-                    assert.equal(_this.requests[1].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
+                    assert.equal(_this.requests[1].requestBody, DSUtils.toJson(
+                        { data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } })
+                    );
                     
-                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(p1.jsonApiData));
+                    _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(p1.jsonApiData));
 
                 }, 30);
                 
-                return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }, { basePath: 'api2' });
-            }).then(function (data) {
-                // We are not testing meta data yet
-                ignoreMetaData(data);
-                
-                assert.deepEqual(data, p1.model, 'post 1 should have been updated#2');
-                assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
+                return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30 }, { basePath: 'api2', changes:false }).then(function (data) {
+                    // We are not testing meta data yet
+                    ignoreMetaData(data);
+                    
+                    assert.deepEqual(data, p1.model, 'post 1 should have been updated#2');
+                    assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
+                });
             });
         });
         
@@ -131,7 +135,7 @@ describe('Update Tests', function () {
                 _this.requests[0].respond(204);//{ 'Content-Type': 'application/vnd.api+json' }
             }, 30);
             
-            return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30, type: 'person' }).then(function (data) {
+            return dsHttpAdapter.update(Post, 1, { author: 'John', age: 30, type: 'person' }, {changes:false}).then(function (data) {
                 // We are not testing meta data yet
                 ignoreMetaData(data);
                 
@@ -275,7 +279,7 @@ describe('Update Tests', function () {
                 var author = testData.config.Author.get(1);
                 assert.isDefined(author, 'Author should be in DS');
                 author.name = 'New Author';
-                return ds.save('author', author.id, {jsonApi: { updateRelationships: true }}).then(function (data) {
+                return ds.save('author', author.id, {changes:false, jsonApi: { updateRelationships: true }}).then(function (data) {
                     assert.isDefined(data, 'Result Should exists');
                     assert.equal(data.name, 'New Author');
                     

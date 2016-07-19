@@ -6,7 +6,7 @@ declare module JsonApiAdapter {
         // JsonApi does not support PUT semantics, so use PATCH by default
         usePATCH?: boolean;
 
-        // Set to true force objects relations to be sent when updating an objet
+        // Set to true to force objects relationships to be sent when updating an objet, default false
         updateRelationships: boolean,
 
         // Do not set globally, used to override the url for a resource
@@ -17,6 +17,9 @@ declare module JsonApiAdapter {
     export interface DSJsonApiAdapterOptions extends JSData.DSHttpAdapterOptions {
         log?: (message?: any, ...optionalParams: any[]) => void;
         error?: (message?: any, ...optionalParams: any[]) => void;
+
+        // Js-data send changes only
+        changes?: boolean;
 
         // DSHTTPSpecific Options
         http?: any;

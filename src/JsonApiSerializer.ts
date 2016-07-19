@@ -920,50 +920,60 @@ export class JsonApiHelper {
 
         var data = new JsonApi.JsonApiData(options.type);
 
+        var changes = attrs;
         //JsonApi id is always a string, it can be empty for a new unstored object!
         if (attrs[options.idAttribute]) {
             data.WithId(attrs[options.idAttribute]);
+
+            // TODO : Update tests
+            //if (config.method === 'patch') {
+            //    changes = (<JSData.DSResourceDefinition<any>>options.def()).changes(attrs[options.idAttribute]);
+            //}
+
+            changes = (config.changes === true) ? (<JSData.DSResourceDefinition<any>>options.def()).changes(attrs[options.idAttribute]) : changes;
         }
 
         // Take object attributes
-            DSUTILS.forOwn(attrs, (value: any, prop: string) => {
-                // Skip id attribute as it has already been copied to the id field out side of the attributes collection
-                // Skip any non-json api compliant tags
-                if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
-                    data.WithAttribute(prop, value);
+        DSUTILS.forOwn(changes, (value: any, prop: string) => {
+            // Skip id attribute as it has already been copied to the id field out side of the attributes collection
+            // Skip any non-json api compliant tags
+            if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
+                data.WithAttribute(prop, value);
+            }
+        });
+
+        // Get object related data
+        // Create should always send relationships
+        if (config.jsonApi.updateRelationships === true) {
+            DSUTILS.forEach(DSUTILS.get<JSData.RelationDefinition[]>(options.def(), 'relationList'), (relation: JSData.RelationDefinition) => {
+                // Get child definition
+                var relatedDef = options.getResource(relation.relation);
+
+                if (relation.type === jsDataHasMany) {
+                    var relationship = new JsonApi.JsonApiRelationship(true);
+                    var relatedObjects = DSUTILS.get<any[]>(changes, relation.localField);
+                    if (relatedObjects) {
+                        //This is a relationship so add data as relationship
+                        DSUTILS.forEach(relatedObjects, (item: any) => {
+                            relationship.WithData(relation.relation, item[relatedDef.idAttribute]);
+                        });
+                    }
+
+                    data.WithRelationship(relation.localField, relationship);
+                }
+
+                if (relation.type === jsDataHasOne) {
+                    var relationship: JsonApi.JsonApiRelationship = null;
+                    var relatedObject = DSUTILS.get<any>(changes, relation.localField);
+                    if (relatedObject) {
+                        relationship = new JsonApi.JsonApiRelationship(false)
+                            .WithData(relation.relation, relatedObject[relatedDef.idAttribute]);
+                    }
+
+                    data.WithRelationship(relation.localField, relationship);
                 }
             });
-
-            // Get object related data
-            if (config.jsonApi.updateRelationships === true) {
-                DSUTILS.forEach(DSUTILS.get<JSData.RelationDefinition[]>(options.def(), 'relationList'), (relation: JSData.RelationDefinition) => {
-                    // Get child definition
-                    var relatedDef = options.getResource(relation.relation);
-
-                    if (relation.type === jsDataHasMany) {
-                        var relatedObjects = DSUTILS.get<any[]>(attrs, relation.localField);
-                        if (relatedObjects) {
-                            //This is a relationship so add data as relationsship as apposed to inling data structure
-                            var relationship = new JsonApi.JsonApiRelationship(true);
-                            DSUTILS.forEach(relatedObjects, (item: any) => {
-                                relationship.WithData(relation.relation, item[relatedDef.idAttribute]);
-                            });
-
-                            data.WithRelationship(relation.localField, relationship);
-                        }
-                    }
-
-                    if (relation.type === jsDataHasOne) {
-                        var relatedObject = DSUTILS.get<any>(attrs, relation.localField);
-                        if (relatedObject) {
-                            var relationship = new JsonApi.JsonApiRelationship(false)
-                                .WithData(relation.relation, relatedObject[relatedDef.idAttribute]);
-
-                            data.WithRelationship(relation.localField, relationship);
-                        }
-                    }
-                });
-            }
+        }
 
         return data;
     }
