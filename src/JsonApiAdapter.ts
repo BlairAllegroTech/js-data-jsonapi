@@ -315,6 +315,9 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     public create(config: JSData.DSResourceDefinition<any>, attrs: Object, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
         let localOptions = this.configureSerializers(options);
 
+        // Create semantics require sending relationships
+        //localOptions.jsonApi.updateRelationships = true;
+
         // Id
         if (attrs[config.idAttribute]) {
             attrs[config.idAttribute] = attrs[config.idAttribute].toString();
@@ -389,9 +392,16 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         }
 
         let localOptions = this.configureSerializers(options);
-        if (!localOptions.method && localOptions.jsonApi.usePATCH === true) {
+        if (localOptions.jsonApi.usePATCH === true) {
             // Use Jsonapi PATCH symantics
-            localOptions.method = 'patch';
+            localOptions.method = localOptions.method || 'patch';
+        } else {
+            localOptions.jsonApi.updateRelationships = true;
+        }
+
+        //If we are using patch then just send changes by default
+        if (localOptions.method === 'patch') {
+            localOptions.changes = (localOptions.changes === false) ? false : true;
         }
 
         return this.adapter.update(config, idString, attrs, localOptions).then(
