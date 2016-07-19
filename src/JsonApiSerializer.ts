@@ -365,6 +365,27 @@ export class SerializationOptions {
 
     //    return match;
     //}
+
+    /**
+     * @name getRelationByLocalField
+     * @desc Get the relationship for a resorce of a given local field name,
+     *       which should be unique and match payload relationships keys.
+     * @param relationName The relationship name to find
+     */
+    getRelationByLocalField(relationName: string): JSData.RelationDefinition {
+        let relationlower = relationName.toLowerCase();
+        let relationList = this.resourceDef.relationList;
+
+        var match: JSData.RelationDefinition = null;
+        DSUTILS.forEach(relationList, (relation: JSData.RelationDefinition) => {
+            if (relation.localField === relationlower) {
+                match = relation;
+                return false;
+            }
+        });
+        return match;
+    }
+
 }
 
 class DeSerializeResult {
@@ -981,9 +1002,24 @@ export class JsonApiHelper {
         //Get each child relationship
         for (var relationName in data.relationships) {
             if (data.relationships[relationName]) {
-
                 // Relation name should be the local field name of a relationship.
                 var relationship = data.relationships[relationName];
+
+                var relationshipDef = options.getRelationByLocalField(relationName);
+                if (relationshipDef) {
+                    // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
+                    metaData.WithRelationshipLink(
+                        relationshipDef.localField,
+                        JSONAPI_RELATED_LINK,
+                        relationshipDef.relation,
+                        relationship.FindLinkType(JSONAPI_RELATED_LINK)
+                    );
+                } else {
+                    throw new Error(
+                        'MISSING: Relationship definition on js-data resource, Name:' + options.type +
+                        ', failed to load relationship named: ' + relationName +
+                        '. Your js-data store configuration does not match your jsonapi data structure');
+                }
 
                 // Data is truthy and is not an array or if an array is not empty
                 var hasData = (relationship.data && (
@@ -995,9 +1031,9 @@ export class JsonApiHelper {
                     var joinTableFactory = null;
                     // Gets type from data
                     var childRelationType = DSUTILS.isArray(relationship.data) ? relationship.data[0].type : (<JsonApi.JsonApiData>(<any>relationship.data)).type;
-                    var relationshipDef = options.getChildRelationWithLocalField(childRelationType, relationName);
+                    relationshipDef = options.getChildRelationWithLocalField(childRelationType, relationName);
 
-                    // EXPERIMENTAL MANY TO MANY RELATIONSHIPS SPECIAL HANDLEING
+                    // EXPERIMENTAL MANY TO MANY RELATIONSHIPS SPECIAL HANDLING
                     // NOTE : If this children are contained in an array and the relationship contains a self link meaning we can manipulate the relationship
                     // independant of the data then this is a manyToMAny relationship and should use a joining table
                     if (!relationshipDef) {
@@ -1109,12 +1145,7 @@ export class JsonApiHelper {
                         }
                     }
 
-                    if (!relationshipDef) {
-                        throw new Error(
-                            'MISSING: Relationship definition on js-data resource, Name:' + options.type +
-                            ', failed to load relationship named: ' + relationName +
-                            '.Your js-data store configuration does not match your jsonapi data structure');
-                    } else {
+                    if (relationshipDef) {
                         // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
                         metaData.WithRelationshipLink(
                             relationshipDef.localField,
@@ -1122,6 +1153,11 @@ export class JsonApiHelper {
                             relationshipDef.relation,
                             relationship.FindLinkType(JSONAPI_RELATED_LINK)
                         );
+                    } else {
+                        throw new Error(
+                            'MISSING: Relationship definition on js-data resource, Name:' + options.type +
+                            ', failed to load relationship named: ' + relationName +
+                            '. Your js-data store configuration does not match your jsonapi data structure');
                     }
 
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"
