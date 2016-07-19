@@ -75,7 +75,7 @@ export class MetaData implements JsonApiAdapter.JsonApiMetaData {
         * @param {string} relationName The name or rel attribute of relationship
         * @param {string} linkType, related, self etc..
         * @param {string} url Link url
-        * @return {MetaData} this e.g. fluent method 
+        * @return {MetaData} this e.g. fluent method
         * @memberOf MetaData
     **/
     WithRelationshipLink(relationName: string, linkType: string, dataType: string, url: string): MetaData {
@@ -218,7 +218,7 @@ export class SerializationOptions {
 
     /**
      * @name getChildRelation
-     * @desc Get the child relationship for a resorce of a given type defined by relationType, 
+     * @desc Get the child relationship for a resorce of a given type defined by relationType,
      *  NOTE: Their can be more than one relation of a type. This just returns the first, or null if non found
      * @param relationType The relationship type to find
      */
@@ -276,7 +276,7 @@ export class SerializationOptions {
 
 
     //Find relationship by relationship name
-    private getChildRelations(relationType: string): Array<JSData.RelationDefinition>  {
+    private getChildRelations(relationType: string): Array<JSData.RelationDefinition> {
         relationType = relationType.toLowerCase();
 
         if (this.resourceDef.relations) {
@@ -294,22 +294,18 @@ export class SerializationOptions {
             }
 
             let relationlower = relationType.toLowerCase();
-            let matchIndex = -1;
-            let relationList = this.resourceDef['relationList'];
+            let matches: Array<JSData.RelationDefinition> = [];
+            let relationList = this.resourceDef.relationList;
 
-            DSUTILS.forEach<JSData.RelationDefinition>(relationList, (relation: JSData.RelationDefinition, index: number) => {
+            DSUTILS.forEach<JSData.RelationDefinition>(relationList, (relation: JSData.RelationDefinition) => {
                 if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
                     if (relationlower === relation.relation) {
-                        matchIndex = index;
-                        return false;
+                        matches.push(relation);
                     }
                 }
             });
-
-            if (matchIndex !== -1) {
-                LogInfo('Relation Case Insensitive match made of ' + relationType, [relationList[matchIndex]]);
-                return relationList[matchIndex];
-            }
+            LogInfo('Relation Case Insensitive match made of ' + relationType, matches);
+            return matches;
         }
 
         return null;
@@ -369,6 +365,27 @@ export class SerializationOptions {
 
     //    return match;
     //}
+
+    /**
+     * @name getRelationByLocalField
+     * @desc Get the relationship for a resorce of a given local field name,
+     *       which should be unique and match payload relationships keys.
+     * @param relationName The relationship name to find
+     */
+    getRelationByLocalField(relationName: string): JSData.RelationDefinition {
+        let relationlower = relationName.toLowerCase();
+        let relationList = this.resourceDef.relationList;
+
+        var match: JSData.RelationDefinition = null;
+        DSUTILS.forEach(relationList, (relation: JSData.RelationDefinition) => {
+            if (relation.localField === relationlower) {
+                match = relation;
+                return false;
+            }
+        });
+        return match;
+    }
+
 }
 
 class DeSerializeResult {
@@ -506,7 +523,7 @@ export class JsonApiHelper {
             }
         }
 
-        // Array of deserialized objects as a js-data friendly object graph  
+        // Array of deserialized objects as a js-data friendly object graph
         var newResponse = new JsonApi.JsonApiRequest();
 
         // Required data
@@ -578,7 +595,7 @@ export class JsonApiHelper {
         //[1] Deserialize all data
         //[2] Deserialize all included data
         //[3] Iterate over included data relationships set to reference other included data.
-        //[4] Iterate over data relationships and set to reference included data if available. 
+        //[4] Iterate over data relationships and set to reference included data if available.
         var data = {};
         var included = {};
         var jsDataJoiningTables = {};
@@ -662,7 +679,7 @@ export class JsonApiHelper {
                     //This item dosn't exist so create a model reference to it
                     let newItem = <any>{};
 
-                    // Apply foreign key to js-data object 
+                    // Apply foreign key to js-data object
                     if (itemPlaceHolder.keyName) {
                         newItem[itemPlaceHolder.keyName] = itemPlaceHolder.keyValue;
                     }
@@ -725,7 +742,7 @@ export class JsonApiHelper {
                     // Replace item in array with plain object, but with Primary key or any foreign keys set
                     var itemOptions = options.getResource(itemPlaceHolder.type);
 
-                    // Apply keys, foreign and local to js-data object 
+                    // Apply keys, foreign and local to js-data object
                     if (itemPlaceHolder.keyName) {
                         newItem[itemPlaceHolder.keyName] = itemPlaceHolder.keyValue;
                     }
@@ -982,7 +999,7 @@ export class JsonApiHelper {
             throw new Error('Missing required "id" property in JsonApi response');
         }
 
-        //Keep type and 
+        //Keep type and
         if (data.type) {
             //fields['type'] = data.type;
         } else {
@@ -995,9 +1012,24 @@ export class JsonApiHelper {
         //Get each child relationship
         for (var relationName in data.relationships) {
             if (data.relationships[relationName]) {
-
                 // Relation name should be the local field name of a relationship.
                 var relationship = data.relationships[relationName];
+
+                var relationshipDef = options.getRelationByLocalField(relationName);
+                if (relationshipDef) {
+                    // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
+                    metaData.WithRelationshipLink(
+                        relationshipDef.localField,
+                        JSONAPI_RELATED_LINK,
+                        relationshipDef.relation,
+                        relationship.FindLinkType(JSONAPI_RELATED_LINK)
+                    );
+                } else {
+                    throw new Error(
+                        'MISSING: Relationship definition on js-data resource, Name:' + options.type +
+                        ', failed to load relationship named: ' + relationName +
+                        '. Your js-data store configuration does not match your jsonapi data structure');
+                }
 
                 // Data is truthy and is not an array or if an array is not empty
                 var hasData = (relationship.data && (
@@ -1009,13 +1041,13 @@ export class JsonApiHelper {
                     var joinTableFactory = null;
                     // Gets type from data
                     var childRelationType = DSUTILS.isArray(relationship.data) ? relationship.data[0].type : (<JsonApi.JsonApiData>(<any>relationship.data)).type;
-                    var relationshipDef = options.getChildRelationWithLocalField(childRelationType, relationName);
+                    relationshipDef = options.getChildRelationWithLocalField(childRelationType, relationName);
 
-                    // EXPERIMENTAL MANY TO MANY RELATIONSHIPS SPECIAL HANDLEING
+                    // EXPERIMENTAL MANY TO MANY RELATIONSHIPS SPECIAL HANDLING
                     // NOTE : If this children are contained in an array and the relationship contains a self link meaning we can manipulate the relationship
                     // independant of the data then this is a manyToMAny relationship and should use a joining table
                     if (!relationshipDef) {
-                        // We could not find the relationship for this data, so check meta data to see if we are using a joining 
+                        // We could not find the relationship for this data, so check meta data to see if we are using a joining
                         // table to manage this type
                         if (options.def().meta && options.def().meta[relationName]) {
                             // Has meta tag for this related field
@@ -1123,12 +1155,7 @@ export class JsonApiHelper {
                         }
                     }
 
-                    if (!relationshipDef) {
-                        throw new Error(
-                            'MISSING: Relationship definition on js-data resource, Name:' + options.type +
-                            ', failed to load relationship named: ' + relationName +
-                            '.Your js-data store configuration does not match your jsonapi data structure');
-                    } else {
+                    if (relationshipDef) {
                         // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
                         metaData.WithRelationshipLink(
                             relationshipDef.localField,
@@ -1136,6 +1163,11 @@ export class JsonApiHelper {
                             relationshipDef.relation,
                             relationship.FindLinkType(JSONAPI_RELATED_LINK)
                         );
+                    } else {
+                        throw new Error(
+                            'MISSING: Relationship definition on js-data resource, Name:' + options.type +
+                            ', failed to load relationship named: ' + relationName +
+                            '. Your js-data store configuration does not match your jsonapi data structure');
                     }
 
                     // hasMany uses 'localField' and "localKeys" or "foreignKey"
@@ -1203,7 +1235,7 @@ export class JsonApiHelper {
 
                             } else {
                                 // This is part of a manyToMany relationship
-                                // This new joinItem needs to be added to the main collection of objets so that in the next pass where we resolve 
+                                // This new joinItem needs to be added to the main collection of objets so that in the next pass where we resolve
                                 // ModelPlaceHolders it will be picked up
                                 let relatedItem = joinTableFactory(item, relationship.FindLinkType('self'));
 
@@ -1271,14 +1303,14 @@ export class JsonApiHelper {
 
     /**
         * Adds ParentID fields to the data provided.
-        * The ParentIDs are retrieved from the self 
+        * The ParentIDs are retrieved from the self
         * links in the links object provided.
         * This will modify the response object.
         */
     private static setParentIds(options: SerializationOptions, data: JsonApi.JsonApiData, fields: any, metaData: MetaData): string {
-        // This object belongs to a parent then search backwards in url for the 
+        // This object belongs to a parent then search backwards in url for the
         // parent resource and then the next field we assume contains the parent reource id
-        // e.g. api/Parent/1/Children        
+        // e.g. api/Parent/1/Children
         var parentRel = options.getParentRelation();
         if (parentRel) {
             // If Type is set and it has links and links has a self link

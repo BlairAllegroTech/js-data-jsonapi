@@ -21,6 +21,17 @@
             {"type": "comment","id": "1"},
             {"type": "comment","id": "2"}
           ]
+        },
+        "image": {
+          "links": {
+            "related": "http://example.com/article/1/image"
+          }
+        },
+        "tags": {
+          "links": {
+            "related": "http://example.com/article/1/tags"
+          },
+          "data": []
         }
       },
       "links": {
