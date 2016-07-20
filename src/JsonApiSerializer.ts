@@ -273,7 +273,18 @@ export class SerializationOptions {
         return match;
     }
 
-
+    /**
+     * @name enumerateAllChildRelations
+     * @desc Encapsulates enumerating child relationships
+     * @param callback A function tobe called back with child relationship data
+     */
+    enumerateAllChildRelations(callback: (relation: JSData.RelationDefinition) => boolean): void {
+        DSUTILS.forEach(this.resourceDef.relationList, (relation: JSData.RelationDefinition) => {
+            if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
+                return callback(relation);
+            }
+        });
+    }
 
     //Find relationship by relationship name
     private getChildRelations(relationType: string): Array<JSData.RelationDefinition> {
@@ -925,12 +936,6 @@ export class JsonApiHelper {
         //JsonApi id is always a string, it can be empty for a new unstored object!
         if (attrs[options.idAttribute]) {
             data.WithId(attrs[options.idAttribute]);
-
-            // TODO : Update tests
-            //if (config.method === 'patch') {
-            //    changes = (<JSData.DSResourceDefinition<any>>options.def()).changes(attrs[options.idAttribute]);
-            //}
-
             changes = (config.changes === true) ? (<JSData.DSResourceDefinition<any>>options.def()).changes(attrs[options.idAttribute]) : changes;
         }
 
@@ -946,8 +951,9 @@ export class JsonApiHelper {
         // Get object related data
         // Create should always send relationships
         if (config.jsonApi.updateRelationships === true) {
-            DSUTILS.forEach(DSUTILS.get<JSData.RelationDefinition[]>(options.def(), 'relationList'), (relation: JSData.RelationDefinition) => {
-                // Get child definition
+            options.enumerateAllChildRelations( (relation: JSData.RelationDefinition) => {
+
+                // Process child definition
                 var relatedDef = options.getResource(relation.relation);
 
                 if (relation.type === jsDataHasMany) {
@@ -973,6 +979,9 @@ export class JsonApiHelper {
 
                     data.WithRelationship(relation.localField, relationship);
                 }
+
+                // Return true to keep enumerating
+                return true;
             });
         }
 
