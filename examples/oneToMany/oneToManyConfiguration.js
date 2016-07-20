@@ -11,7 +11,7 @@
             name: 'article',
             idAttribute: 'id',
             relations: {
-                // hasMany uses "localField" and "localKeys" or "foreignKey"
+                // hasOne uses "localField" and "localKey" or "foreignKey"
                 // In the case of one to many we use foreignKey
                 hasOne: {
                     author: {
@@ -20,10 +20,11 @@
                     },
                     image: {
                         localField: 'image',
-                        localKey: 'imageid'
+                        foreignKey: 'articleid'
                     }
                 },
-
+                
+                // hasMany uses "localField" and "localKeys" or "foreignKey"
                 hasMany: {
                     comment: {
                         localField: 'comments',
@@ -41,7 +42,7 @@
             name: 'author',
             idAttribute: 'id',
             relations: {
-                // hasMany uses "localField" and "localKeys" or "foreignKey"
+                // belongsTo uses "localField" and "localKey"
                 belongsTo: {
                     article: {
                         localField: 'article',
@@ -55,13 +56,14 @@
             name: 'comment',
             idAttribute: 'id',
             relations: {
-                // hasMany uses "localField" and "localKeys" or "foreignKey"
+                // belongsTo uses "localField" and "localKey"
                 belongsTo: {
                     article: {
                         localField: 'article',
                         localKey: 'articleid'
                     }
                 },
+                // hasOne uses "localField" and "localKey" or "foreignKey"
                 hasOne: {
                     author: {
                         localField: 'author',
@@ -74,10 +76,11 @@
         var Image = ds.defineResource({
             name: 'image',
             relations: {
+                // belongsTo uses "localField" and "localKey"
                 belongsTo: {
                     article: {
                         localField: 'article',
-                        foreignKey: 'imageid'
+                        localKey: 'articleid'
                     }
                 }
             }
@@ -86,6 +89,7 @@
         var Tag = ds.defineResource({
             name: 'tag',
             relations: {
+                // belongsTo uses "localField" and "localKey"
                 belongsTo: {
                     article: {
                         localField: 'article',

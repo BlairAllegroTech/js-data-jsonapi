@@ -370,6 +370,7 @@ export class SerializationOptions {
      * @name getRelationByLocalField
      * @desc Get the relationship for a resorce of a given local field name,
      *       which should be unique and match payload relationships keys.
+     *       This method returns both parent and child relationship types
      * @param relationName The relationship name to find
      */
     getRelationByLocalField(relationName: string): JSData.RelationDefinition {
@@ -1017,273 +1018,279 @@ export class JsonApiHelper {
 
                 var relationshipDef = options.getRelationByLocalField(relationName);
                 if (relationshipDef) {
+                    // We are only interestedin child relationships
                     // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
-                    metaData.WithRelationshipLink(
-                        relationshipDef.localField,
-                        JSONAPI_RELATED_LINK,
-                        relationshipDef.relation,
-                        relationship.FindLinkType(JSONAPI_RELATED_LINK)
-                    );
-                } else {
-                    throw new Error(
-                        'MISSING: Relationship definition on js-data resource, Name:' + options.type +
-                        ', failed to load relationship named: ' + relationName +
-                        '. Your js-data store configuration does not match your jsonapi data structure');
-                }
-
-                // Data is truthy and is not an array or if an array is not empty
-                var hasData = (relationship.data && (
-                    !DSUTILS.isArray(relationship.data) ||
-                    (DSUTILS.isArray(relationship.data) && (<JsonApi.JsonApiData[]>relationship.data).length > 0))
-                );
-
-                if (hasData) {
-                    var joinTableFactory = null;
-                    // Gets type from data
-                    var childRelationType = DSUTILS.isArray(relationship.data) ? relationship.data[0].type : (<JsonApi.JsonApiData>(<any>relationship.data)).type;
-                    relationshipDef = options.getChildRelationWithLocalField(childRelationType, relationName);
-
-                    // EXPERIMENTAL MANY TO MANY RELATIONSHIPS SPECIAL HANDLING
-                    // NOTE : If this children are contained in an array and the relationship contains a self link meaning we can manipulate the relationship
-                    // independant of the data then this is a manyToMAny relationship and should use a joining table
-                    if (!relationshipDef) {
-                        // We could not find the relationship for this data, so check meta data to see if we are using a joining
-                        // table to manage this type
-                        if (options.def().meta && options.def().meta[relationName]) {
-                            // Has meta tag for this related field
-
-                            // Child type from meta, relationNameis the name of the local field
-                            var joinMetaData = options.def().meta[relationName] as IJSDataManyToManyMeta;
-
-                            // Meta data for the joining table
-                            var joiningTypeResourceDef = options.getResource(joinMetaData.joinType);
-
-                            // So now we have the correct type for the relationship, we can get the local relationship
-                            // and its corresponding foreign key field name
-                            relationshipDef = options.getChildRelationWithLocalField(joinMetaData.joinType, relationName);
-                            if (relationshipDef.type !== jsDataHasMany) {
-                                throw new Error(
-                                    'Expected relationship Named:' + relationName + 'on type:' + options.type +
-                                    ' with many-to-many meta data to be a to many relationship.');
-                            }
-
-                            // Get the parent relation of the joining type
-                            var joiningTableChildRelation = joiningTypeResourceDef.getParentRelation(joinMetaData.type);
-                            if (!joiningTableChildRelation || !joiningTableChildRelation[0]) {
-                                throw new Error(
-                                    'Expected Many-To-Many Joining table to have a "belongsTo" relation of type:' + joinMetaData.type +
-                                    ' as defined in meta data of type:' + data.type);
-                            }
-
-                            // Not sure yetif we are going to use local fields or keys...
-                            var joinState = {
-                                idAttribute: joiningTypeResourceDef.idAttribute,
-                                type: joiningTypeResourceDef.type,
-
-                                dataLocalField: relationshipDef.localField,
-                                dataForeignKey: relationshipDef.foreignKey,
-
-                                joinTypeDef: joiningTypeResourceDef
-                            };
-
-                            // So we will need to attach joining data to the field before returning it
-                            // We can calculate id as the combination of both foreign keys
-                            //Create an instance of the joining table.
-                            joinTableFactory = function (foreignRecord: JsonApi.JsonApiData, relationshipLink: string) {
-
-                                // Compare typenames in order to determine order to combine pk vales.
-                                // Any algorithum that results in the same value regardless of the order will do here
-                                var pk = (data.type > foreignRecord.type) ? data.id + foreignRecord.id : foreignRecord.id + data.id;
-                                joinData[joinState.type] = (joinData[joinState.type] || {});
-
-                                // Set foreign field
-                                var joinTableRelation = joinState.joinTypeDef.getParentRelationByLocalKey(joinState.dataForeignKey);
-
-                                if (!joinTableRelation) {
-                                    throw new Error('No "BelongsTo" relationship found on joining table ' + joinState.joinTypeDef.type + ' with field name:' + joinState.dataForeignKey);
-                                }
-
-                                // If it exists should not need to alter it
-                                if (!joinData[joinState.type][pk]) {
-
-                                    var metaData = new MetaData(joinState.type);
-                                    metaData.isJsonApiReference = false;
-
-                                    // Unique key
-                                    let fields = {};
-                                    fields[joinState.idAttribute] = pk;
-                                    //fields['type'] = joinState.type;
-
-                                    //Set foreign key of this type
-                                    // TODO : Must set foreign field rather than foreign key so that js data can build objects correctly
-                                    //fields[joinState.dataLocalField] = new ModelPlaceHolder(data.type, data.id)
-                                    //    .WithForeignKey(joinState.dataLocalField, data.id, data.type);
-
-
-                                    //Joining object should be a parent belongsto relation
-                                    fields[joinTableRelation.localKey] = data.id;
-                                    fields[joinTableRelation.localField] = new ModelPlaceHolder(data.type, data.id);
-
-                                    //foreignRecord[joinState.dataLocalField] = new ModelPlaceHolder(joinState.type, pk)
-                                    //    .WithForeignKey(joinState.dataForeignKey, data.id, data.type);
-
-                                    // Append the id of the synthisized pk...Not sure if we will get away with this as we may not always
-                                    // have both of these, say for inserts
-                                    metaData.selfLink = relationshipLink + '/' + pk;
-
-                                    // May need to flag this as a temp object not sourced from server...
-                                    fields[JSONAPI_META] = metaData;
-
-                                    // Store this oject
-                                    joinData[joinState.type][pk] = fields;
-                                } else {
-                                    // Already exists so just set relation on it
-
-                                    // Set foreign field
-                                    var join = joinData[joinState.type][pk];
-
-                                    join[joinTableRelation.localKey] = data.id;
-                                    join[joinTableRelation.localField] = new ModelPlaceHolder(data.type, data.id);
-
-                                    //join[joinTableRelation.localField] = new ModelPlaceHolder(foreignRecord.type, foreignRecord.id)
-                                    //   .WithForeignKey(joinTableRelation.foreignKey, data.id, data.type);
-                                }
-
-                                return new ModelPlaceHolder(joinState.type, pk)
-                                    .WithForeignKey(joinState.dataForeignKey, data.id, data.type);
-                            };
-                        }
-                    }
-
-                    if (relationshipDef) {
-                        // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
+                    if (relationshipDef.type === jsDataHasMany || relationshipDef.type === jsDataHasOne) {
                         metaData.WithRelationshipLink(
                             relationshipDef.localField,
                             JSONAPI_RELATED_LINK,
                             relationshipDef.relation,
                             relationship.FindLinkType(JSONAPI_RELATED_LINK)
                         );
-                    } else {
-                        throw new Error(
-                            'MISSING: Relationship definition on js-data resource, Name:' + options.type +
-                            ', failed to load relationship named: ' + relationName +
-                            '. Your js-data store configuration does not match your jsonapi data structure');
-                    }
 
-                    // hasMany uses 'localField' and "localKeys" or "foreignKey"
-                    // hasOne uses "localField" and "localKey" or "foreignKey"
-                    var localField = relationshipDef.localField;
-                    var foreignKey = relationshipDef.foreignKey;
-                    var relationType = relationshipDef.type; //hasOne or hasMany
 
-                    if (!localField) {
-                        throw new Error(
-                            'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
-                            'relationship requires "localField" parameter to be configured');
-                    }
+                        // Data is truthy and is not an array or if an array is not empty
+                        var hasData = (relationship.data && (
+                            !DSUTILS.isArray(relationship.data) ||
+                            (DSUTILS.isArray(relationship.data) && (<JsonApi.JsonApiData[]>relationship.data).length > 0))
+                        );
 
-                    if (relationType === jsDataHasMany) {
-                        if (!(foreignKey || relationshipDef.localKeys)) {
-                            throw new Error(
-                                'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
-                                'A "hasMany" relationship requires either "foreignKey" or "localKeys" to be configured');
-                        }
-                        if (foreignKey && relationshipDef.localKeys) {
-                            throw new Error(
-                                'ERROR: Ambiguous js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
-                                'A "hasMany" relationship has both localKeys and foreignKeys configured, use either "foreignKey" or "localKeys" but not BOTH');
-                        }
+                        if (hasData) {
+                            var joinTableFactory = null;
+                            // Gets type from data
+                            var childRelationType = DSUTILS.isArray(relationship.data) ? relationship.data[0].type : (<JsonApi.JsonApiData>(<any>relationship.data)).type;
+                            relationshipDef = options.getChildRelationWithLocalField(childRelationType, relationName);
 
-                    } else {
-                        if (!(foreignKey || relationshipDef.localKey)) {
-                            throw new Error(
-                                'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
-                                'A "hasOne" relationship requires either "foreignKey" or "localKey" to be configured');
-                        }
+                            // EXPERIMENTAL MANY TO MANY RELATIONSHIPS SPECIAL HANDLING
+                            // NOTE : If this children are contained in an array and the relationship contains a self link meaning we can manipulate the relationship
+                            // independant of the data then this is a manyToMAny relationship and should use a joining table
+                            if (!relationshipDef) {
+                                // We could not find the relationship for this data, so check meta data to see if we are using a joining
+                                // table to manage this type
+                                if (options.def().meta && options.def().meta[relationName]) {
+                                    // Has meta tag for this related field
 
-                        if (foreignKey && relationshipDef.localKey) {
-                            throw new Error(
-                                'ERROR: Ambiguous js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
-                                'A "hasOne" relationship has both localKey and foreignKey configured, use either "foreignKey" or "localKey" but not BOTH');
-                        }
-                    }
+                                    // Child type from meta, relationNameis the name of the local field
+                                    var joinMetaData = options.def().meta[relationName] as IJSDataManyToManyMeta;
 
-                    // From each relationship, get the data IF it is an array
-                    if (DSUTILS.isArray(relationship.data)) {
+                                    // Meta data for the joining table
+                                    var joiningTypeResourceDef = options.getResource(joinMetaData.joinType);
 
-                        // NOT SURE if we need these local keys..
-                        var localKeysList = new Array<string>();
+                                    // So now we have the correct type for the relationship, we can get the local relationship
+                                    // and its corresponding foreign key field name
+                                    relationshipDef = options.getChildRelationWithLocalField(joinMetaData.joinType, relationName);
+                                    if (relationshipDef.type !== jsDataHasMany) {
+                                        throw new Error(
+                                            'Expected relationship Named:' + relationName + 'on type:' + options.type +
+                                            ' with many-to-many meta data to be a to many relationship.');
+                                    }
 
-                        // TO MANY RELATIONSHPI, use either foreignKey or localKeys
-                        var relatedItems = new Array<Object>();
-                        DSUTILS.forEach((<JsonApi.JsonApiData[]>relationship.data), (item: JsonApi.JsonApiData) => {
+                                    // Get the parent relation of the joining type
+                                    var joiningTableChildRelation = joiningTypeResourceDef.getParentRelation(joinMetaData.type);
+                                    if (!joiningTableChildRelation || !joiningTableChildRelation[0]) {
+                                        throw new Error(
+                                            'Expected Many-To-Many Joining table to have a "belongsTo" relation of type:' + joinMetaData.type +
+                                            ' as defined in meta data of type:' + data.type);
+                                    }
 
-                            if (joinTableFactory == null) {
+                                    // Not sure yetif we are going to use local fields or keys...
+                                    var joinState = {
+                                        idAttribute: joiningTypeResourceDef.idAttribute,
+                                        type: joiningTypeResourceDef.type,
+
+                                        dataLocalField: relationshipDef.localField,
+                                        dataForeignKey: relationshipDef.foreignKey,
+
+                                        joinTypeDef: joiningTypeResourceDef
+                                    };
+
+                                    // So we will need to attach joining data to the field before returning it
+                                    // We can calculate id as the combination of both foreign keys
+                                    //Create an instance of the joining table.
+                                    joinTableFactory = function (foreignRecord: JsonApi.JsonApiData, relationshipLink: string) {
+
+                                        // Compare typenames in order to determine order to combine pk vales.
+                                        // Any algorithum that results in the same value regardless of the order will do here
+                                        var pk = (data.type > foreignRecord.type) ? data.id + foreignRecord.id : foreignRecord.id + data.id;
+                                        joinData[joinState.type] = (joinData[joinState.type] || {});
+
+                                        // Set foreign field
+                                        var joinTableRelation = joinState.joinTypeDef.getParentRelationByLocalKey(joinState.dataForeignKey);
+
+                                        if (!joinTableRelation) {
+                                            throw new Error('No "BelongsTo" relationship found on joining table ' + joinState.joinTypeDef.type + ' with field name:' + joinState.dataForeignKey);
+                                        }
+
+                                        // If it exists should not need to alter it
+                                        if (!joinData[joinState.type][pk]) {
+
+                                            var metaData = new MetaData(joinState.type);
+                                            metaData.isJsonApiReference = false;
+
+                                            // Unique key
+                                            let fields = {};
+                                            fields[joinState.idAttribute] = pk;
+                                            //fields['type'] = joinState.type;
+
+                                            //Set foreign key of this type
+                                            // TODO : Must set foreign field rather than foreign key so that js data can build objects correctly
+                                            //fields[joinState.dataLocalField] = new ModelPlaceHolder(data.type, data.id)
+                                            //    .WithForeignKey(joinState.dataLocalField, data.id, data.type);
+
+
+                                            //Joining object should be a parent belongsto relation
+                                            fields[joinTableRelation.localKey] = data.id;
+                                            fields[joinTableRelation.localField] = new ModelPlaceHolder(data.type, data.id);
+
+                                            //foreignRecord[joinState.dataLocalField] = new ModelPlaceHolder(joinState.type, pk)
+                                            //    .WithForeignKey(joinState.dataForeignKey, data.id, data.type);
+
+                                            // Append the id of the synthisized pk...Not sure if we will get away with this as we may not always
+                                            // have both of these, say for inserts
+                                            metaData.selfLink = relationshipLink + '/' + pk;
+
+                                            // May need to flag this as a temp object not sourced from server...
+                                            fields[JSONAPI_META] = metaData;
+
+                                            // Store this oject
+                                            joinData[joinState.type][pk] = fields;
+                                        } else {
+                                            // Already exists so just set relation on it
+
+                                            // Set foreign field
+                                            var join = joinData[joinState.type][pk];
+
+                                            join[joinTableRelation.localKey] = data.id;
+                                            join[joinTableRelation.localField] = new ModelPlaceHolder(data.type, data.id);
+
+                                            //join[joinTableRelation.localField] = new ModelPlaceHolder(foreignRecord.type, foreignRecord.id)
+                                            //   .WithForeignKey(joinTableRelation.foreignKey, data.id, data.type);
+                                        }
+
+                                        return new ModelPlaceHolder(joinState.type, pk)
+                                            .WithForeignKey(joinState.dataForeignKey, data.id, data.type);
+                                    };
+                                }
+                            }
+
+                            if (relationshipDef) {
+                                // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
+                                metaData.WithRelationshipLink(
+                                    relationshipDef.localField,
+                                    JSONAPI_RELATED_LINK,
+                                    relationshipDef.relation,
+                                    relationship.FindLinkType(JSONAPI_RELATED_LINK)
+                                );
+                            } else {
+                                throw new Error(
+                                    'MISSING: Relationship definition on js-data resource, Name:' + options.type +
+                                    ', failed to load relationship named: ' + relationName +
+                                    '. Your js-data store configuration does not match your jsonapi data structure');
+                            }
+
+                            // hasMany uses 'localField' and "localKeys" or "foreignKey"
+                            // hasOne uses "localField" and "localKey" or "foreignKey"
+                            var localField = relationshipDef.localField;
+                            var foreignKey = relationshipDef.foreignKey;
+                            var relationType = relationshipDef.type; //hasOne or hasMany
+
+                            if (!localField) {
+                                throw new Error(
+                                    'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
+                                    'relationship requires "localField" parameter to be configured');
+                            }
+
+                            if (relationType === jsDataHasMany) {
+                                if (!(foreignKey || relationshipDef.localKeys)) {
+                                    throw new Error(
+                                        'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
+                                        'A "hasMany" relationship requires either "foreignKey" or "localKeys" to be configured');
+                                }
+                                if (foreignKey && relationshipDef.localKeys) {
+                                    throw new Error(
+                                        'ERROR: Ambiguous js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
+                                        'A "hasMany" relationship has both localKeys and foreignKeys configured, use either "foreignKey" or "localKeys" but not BOTH');
+                                }
+
+                            } else {
+                                if (!(foreignKey || relationshipDef.localKey)) {
+                                    throw new Error(
+                                        'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
+                                        'A "hasOne" relationship requires either "foreignKey" or "localKey" to be configured');
+                                }
+
+                                if (foreignKey && relationshipDef.localKey) {
+                                    throw new Error(
+                                        'ERROR: Ambiguous js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + relationshipDef.relation +
+                                        'A "hasOne" relationship has both localKey and foreignKey configured, use either "foreignKey" or "localKey" but not BOTH');
+                                }
+                            }
+
+                            // From each relationship, get the data IF it is an array
+                            if (DSUTILS.isArray(relationship.data)) {
+
+                                // NOT SURE if we need these local keys..
+                                var localKeysList = new Array<string>();
+
+                                // TO MANY RELATIONSHPI, use either foreignKey or localKeys
+                                var relatedItems = new Array<Object>();
+                                DSUTILS.forEach((<JsonApi.JsonApiData[]>relationship.data), (item: JsonApi.JsonApiData) => {
+
+                                    if (joinTableFactory == null) {
+                                        var id = item.id;
+                                        var type = item.type;
+
+                                        let relatedItem = new ModelPlaceHolder(type, id);
+                                        if (relationshipDef.foreignKey) {
+                                            // Store foreign key forfuture reference, so that it can be applied to foreign object later once resolved
+                                            relatedItem.WithForeignKey(relationshipDef.foreignKey, data.id, data.type);
+                                        } else {
+                                            // Store local keys directly on the object
+                                            localKeysList.push(id);
+                                        }
+
+                                        relatedItems.push(relatedItem);
+
+                                    } else {
+                                        // This is part of a manyToMany relationship
+                                        // This new joinItem needs to be added to the main collection of objets so that in the next pass where we resolve
+                                        // ModelPlaceHolders it will be picked up
+                                        let relatedItem = joinTableFactory(item, relationship.FindLinkType('self'));
+
+                                        localKeysList.push(id);
+                                        relatedItems.push(relatedItem);
+                                    }
+                                });
+
+                                // Configure js-data relations.
+                                // If the relation dosent have a foreignKey defined then we must use localKeys
+                                if (relationshipDef.localKeys) {
+                                    // hasMany uses localKeys
+                                    fields[relationshipDef.localKeys] = localKeysList; //Set localKeys on Parent
+                                }
+
+                                // Store related local items for toMany relationship refered to by foreignKeys or localKeys
+                                fields[localField] = relatedItems;
+
+
+                            } else {
+                                // TO ONE RELATIONSHIP
+                                // If data is not an array then set a single item.
+                                let item: JsonApi.JsonApiData = (<any>relationship.data);
                                 var id = item.id;
                                 var type = item.type;
 
                                 let relatedItem = new ModelPlaceHolder(type, id);
                                 if (relationshipDef.foreignKey) {
-                                    // Store foreign key forfuture reference, so that it can be applied to foreign object later once resolved
                                     relatedItem.WithForeignKey(relationshipDef.foreignKey, data.id, data.type);
                                 } else {
-                                    // Store local keys directly on the object
-                                    localKeysList.push(id);
+                                    // hasOne uses localKey
+                                    fields[relationshipDef.localKey] = id; //Set localKeys on Parent
                                 }
 
-                                relatedItems.push(relatedItem);
+                                // Store related local key for toOne related items relationship
+                                // This will get removed later and either resolved to a relateed object or the stored key set on the parent
+                                fields[localField] = relatedItem;
 
-                            } else {
-                                // This is part of a manyToMany relationship
-                                // This new joinItem needs to be added to the main collection of objets so that in the next pass where we resolve
-                                // ModelPlaceHolders it will be picked up
-                                let relatedItem = joinTableFactory(item, relationship.FindLinkType('self'));
-
-                                localKeysList.push(id);
-                                relatedItems.push(relatedItem);
                             }
-                        });
+                        } else {
+                            // When a relationship has no data we must still return it to js-data so that the data store is updated.
+                            // E.g. If there previously existed a relationship then we need to inform js-data's data store to break this relationship!
 
-                        // Configure js-data relations.
-                        // If the relation dosent have a foreignKey defined then we must use localKeys
-                        if (relationshipDef.localKeys) {
-                            // hasMany uses localKeys
-                            fields[relationshipDef.localKeys] = localKeysList; //Set localKeys on Parent
+                            //Here the relationship data will be set to null or and empty array
                         }
-
-                        // Store related local items for toMany relationship refered to by foreignKeys or localKeys
-                        fields[localField] = relatedItems;
-
 
                     } else {
-                        // TO ONE RELATIONSHIP
-                        // If data is not an array then set a single item.
-                        let item: JsonApi.JsonApiData = (<any>relationship.data);
-                        var id = item.id;
-                        var type = item.type;
-
-                        let relatedItem = new ModelPlaceHolder(type, id);
-                        if (relationshipDef.foreignKey) {
-                            relatedItem.WithForeignKey(relationshipDef.foreignKey, data.id, data.type);
-                        } else {
-                            // hasOne uses localKey
-                            fields[relationshipDef.localKey] = id; //Set localKeys on Parent
-                        }
-
-                        // Store related local key for toOne related items relationship
-                        // This will get removed later and either resolved to a relateed object or the stored key set on the parent
-                        fields[localField] = relatedItem;
-
+                        // This is a parenet relationship
                     }
                 } else {
-                    // When a relationship has no data we must still return it to js-data so that the data store is updated.
-                    // E.g. If there previously existed a relationship then we need to inform js-data's data store to break this relationship!
-
-                    //Here the relationship data will be set to null or and empty array
+                    throw new Error(
+                        'MISSING: Relationship definition on js-data resource, Name:' + options.type +
+                        ', failed to load relationship named: ' + relationName +
+                        '. Your js-data store configuration does not match your jsonapi data structure');
                 }
-
             }
-        }
+        } // End : relationships
 
         // Deserialise Arbitary data links into object meta data
         if (data.links) {

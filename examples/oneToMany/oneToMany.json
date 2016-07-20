@@ -48,11 +48,14 @@
     },
     "relationships": {
       "author": {
+        "links": {
+            "related": "http://example.com/comment/1/author"
+          },
         "data": { "type": "author", "id": "9" }
       }
     },
     "links": {
-      "self": "http://example.com/article/1/comments/1"
+      "self": "http://example.com/comment/1"
     }
   }, {
     "type": "comment",
@@ -62,11 +65,14 @@
     },
     "relationships": {
       "author": {
+        "links": {
+            "related": "http://example.com/comment/2/author"
+          },
         "data": { "type": "author", "id": "9" }
       }
     },
     "links": {
-      "self": "http://example.com/article/1/comments/2"
+      "self": "http://example.com/comment/2"
     }
   }
   ]
