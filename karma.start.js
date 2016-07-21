@@ -151,7 +151,7 @@ beforeEach(function () {
                 container: {
                     localField: 'Container',
                     localKey: 'containerid',
-                    parent: true
+                    //parent: true
                 }
             }
         }

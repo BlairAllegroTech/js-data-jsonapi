@@ -23,7 +23,7 @@ declare module JsonApiAdapter {
 
         // DSHTTPSpecific Options
         http?: any;
-        headers?: any;
+        headers?: { [name: string]: string };
         method?: string;
 
         // If required pass json api specific options on here

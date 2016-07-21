@@ -29,6 +29,9 @@
 
         enumerable?: boolean;
         link?: boolean;
+
+        //Added needs to be added to DefinitelyType
+        load?: (Resource: JSData.DSResourceDefinition<any>, relationDef: JSData.RelationDefinition, instance: Object, origGetter: Function) => Promise<any> | void;
     }
 
     interface PromiseLib {

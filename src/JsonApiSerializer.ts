@@ -278,10 +278,10 @@ export class SerializationOptions {
      * @desc Encapsulates enumerating child relationships
      * @param callback A function tobe called back with child relationship data
      */
-    enumerateAllChildRelations(callback: (relation: JSData.RelationDefinition) => boolean): void {
-        DSUTILS.forEach(this.resourceDef.relationList, (relation: JSData.RelationDefinition) => {
+    enumerateAllChildRelations(callback: (relation: JSData.RelationDefinition, index?: number, source?: Object) => boolean): void {
+        DSUTILS.forEach(this.resourceDef.relationList, (relation: JSData.RelationDefinition, index?: number, source?: Object) => {
             if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
-                return callback(relation);
+                return callback(relation, index, source);
             }
         });
     }
@@ -1379,9 +1379,52 @@ export class JsonApiHelper {
     }
 
 
-    private static beforeInjectJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any): void {
+    private static onInjectJsonApiData(resource: JSData.DSResourceDefinition<any>, items: any): void {
 
         if (items) {
+
+            // This is not required oneach data item this applies to the Resource Definition
+            var def: SerializationOptions = new SerializationOptions(resource);
+
+            def.enumerateAllChildRelations((relationDef: JSData.RelationDefinition) => {
+                if (typeof relationDef.load !== 'function') {
+
+                    // This adds a customrelationship load method that is called by loadRelations to override default behaviour
+                    // Here we add the relationship url to options and store a reference to this functon, set the relationshipDef load functions to undefined
+                    // and call loadRelations again, this time options will contain the stored relatedLink and the load function will not get re-called as we have removed it
+                    // Then after loadRelations completes or fails, restore the load function once again
+                    relationDef.load = (
+                        Resource: JSData.DSResourceDefinition<any>,
+                        relationDef: JSData.RelationDefinition,
+                        instance: Object,
+                        optionsOrig: JSData.DSAdapterOperationConfiguration) => {
+
+                        var meta = MetaData.TryGetMetaData(instance);
+                        var relatedLink = meta.getRelationshipLink(relationDef.localField, JSONAPI_RELATED_LINK);
+                        var options: JsonApiAdapter.DSJsonApiAdapterOptions = <any>optionsOrig;
+                        if (relatedLink) {
+                            options.jsonApi = options.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
+                            options.jsonApi.jsonApiPath = options.jsonApi.jsonApiPath || relatedLink.url;
+                        }
+
+                        var tmp = { target: relationDef, func: relationDef.load };
+                        relationDef.load = undefined;
+
+                        return Resource.loadRelations(<any>instance, relationDef.localField, optionsOrig)
+                            .then( () => {
+                                // Restore load function on success
+                                tmp.target.load = tmp.func;
+                            }, () => {
+                                // Restore load function on error
+                                tmp.target.load = tmp.func;
+                            });
+
+                    }; //end load
+                }
+                return true;
+            });
+
+
             // Merge a json api reference with a fully populated resource that has been previously retrieved
             var dataList = DSUTILS.isArray(items) ? items : [items];
 
@@ -1455,7 +1498,12 @@ export class JsonApiHelper {
                                     };
 
                                     // Resolves promise async
-                                    return (<JSData.DSResourceDefinition<any>>childResource.def()).findAll(params, operationConfig);
+                                    //if (DSUTILS.isArray(this[relationName])) {
+                                        return (<JSData.DSResourceDefinition<any>>childResource.def()).findAll(params, operationConfig);
+                                    //} else {
+                                    //    // We may not know the id? just the url
+                                    //    return (<JSData.DSResourceDefinition<any>>childResource.def()).find(0, operationConfig);
+                                    //}
                                 }
                             } else {
                                 // Resolve promise synchronously!!
@@ -1498,9 +1546,20 @@ export class JsonApiHelper {
         }
     };
 
+    private static afterLoadRelations(resource: JSData.DSResourceDefinition<any>, items: any, cb?: (err: Error, data: any) => void): void {
+        if (cb) {
+            cb(null, items);
+        } else {
+            // Synchronous call
+            // LogInfo('beforeUpdateJsonApiData called without callback', [resource, items]);
+            return items;
+        }
+    }
+
     public static AssignLifeTimeEvents(resource: JSData.DSResourceDefinitionConfiguration) {
-        //resource.beforeInject = JsonApiHelper.beforeInjectJsonApiData;
-        resource.afterInject = JsonApiHelper.beforeInjectJsonApiData;
+        resource.afterInject = JsonApiHelper.onInjectJsonApiData;
         resource.beforeUpdate = JsonApiHelper.beforeUpdateJsonApiData;
+
+        //resource.afterLoadRelations = JsonApiHelper.afterLoadRelations;
     }
 }
