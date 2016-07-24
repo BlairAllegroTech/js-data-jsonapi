@@ -5,7 +5,7 @@ describe('Update Tests', function () {
             var _this = this;
             
             setTimeout(function () {
-                assert.equal(1, _this.requests.length);
+                assert.equal(1, _this.requests.length, 'Should be 1st request');
                 assert.equal(_this.requests[0].url, 'api/posts/1');
                 assert.equal(_this.requests[0].method, 'PATCH');
                 assert.isDefined(_this.requests[0].requestHeaders);
@@ -29,7 +29,7 @@ describe('Update Tests', function () {
                 assert.deepEqual(data, p1.model, 'post 1 should have been updated#1');
                 
                 setTimeout(function () {
-                    assert.equal(2, _this.requests.length);
+                    assert.equal(2, _this.requests.length, 'Should be 2nd request');
                     assert.equal(_this.requests[1].url, 'api2/posts/1');
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
@@ -54,7 +54,7 @@ describe('Update Tests', function () {
             var _this = this;
             
             setTimeout(function () {
-                assert.equal(1, _this.requests.length);
+                assert.equal(1, _this.requests.length, 'Should be 1st request');
                 assert.equal(_this.requests[0].url, 'api/posts/1');
                 assert.equal(_this.requests[0].method, 'PUT');
                 assert.isDefined(_this.requests[0].requestHeaders);
@@ -74,7 +74,7 @@ describe('Update Tests', function () {
                 assert.deepEqual(data, p1.model, 'post 1 should have been updated#1');
                 
                 setTimeout(function () {
-                    assert.equal(2, _this.requests.length);
+                    assert.equal(2, _this.requests.length, 'Should be 2nd request');
                     assert.equal(_this.requests[1].url, 'api2/posts/1');
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
@@ -101,7 +101,7 @@ describe('Update Tests', function () {
             var _this = this;
             
             setTimeout(function () {
-                assert.equal(1, _this.requests.length);
+                assert.equal(1, _this.requests.length, 'Should be first request');
                 assert.equal(_this.requests[0].url, 'api/posts/1');
                 assert.equal(_this.requests[0].method, 'PUT');
                 assert.isDefined(_this.requests[0].requestHeaders);

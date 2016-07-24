@@ -165,17 +165,13 @@ export class SerializationOptions {
         return resource ? new SerializationOptions(resource) : null;
     }
 
-    getParentRelation(relationName?: string): JSData.RelationDefinition {
+    getBelongsToRelation(parentType: string, relationName? : string): JSData.RelationDefinition {
         if (this.resourceDef.relations && this.resourceDef.relations.belongsTo) {
 
             if (relationName) {
-                return this.resourceDef.relations.belongsTo[relationName];
+                return this.resourceDef.relations.belongsTo[parentType];
             }else {
-                for (var r in this.resourceDef.relations.belongsTo) {
-                    if (this.resourceDef.relations.belongsTo[r] && this.resourceDef.relations.belongsTo[r][0]) {
-                        return this.resourceDef.relations.belongsTo[r][0];
-                    }
-                }
+                return this.resourceDef.relations.belongsTo[parentType];
             }
         }
 
@@ -285,6 +281,31 @@ export class SerializationOptions {
             }
         });
     }
+
+    /**
+     * @name enumerateAllParentRelations
+     * @desc Encapsulates enumerating child relationships
+     * @param callback A function tobe called back with child relationship data
+     */
+    enumerateAllParentRelations(callback: (relation: JSData.RelationDefinition, index?: number, source?: Object) => boolean): void {
+        DSUTILS.forEach(this.resourceDef.relationList, (relation: JSData.RelationDefinition, index?: number, source?: Object) => {
+            if (relation.type === jsDataBelongsTo) {
+                return callback(relation, index, source);
+            }
+        });
+    }
+
+    /**
+     * @name enumerateRelations
+     * @desc Encapsulates enumerating child relationships
+     * @param callback A function tobe called back with child relationship data
+     */
+    enumerateRelations(callback: (relation: JSData.RelationDefinition, index?: number, source?: Object) => boolean): void {
+        DSUTILS.forEach(this.resourceDef.relationList, (relation: JSData.RelationDefinition, index?: number, source?: Object) => {
+                return callback(relation, index, source);
+        });
+    }
+
 
     //Find relationship by relationship name
     private getChildRelations(relationType: string): Array<JSData.RelationDefinition> {
@@ -1075,7 +1096,7 @@ export class JsonApiHelper {
                                     }
 
                                     // Get the parent relation of the joining type
-                                    var joiningTableChildRelation = joiningTypeResourceDef.getParentRelation(joinMetaData.type);
+                                    var joiningTableChildRelation = joiningTypeResourceDef.getBelongsToRelation(joinMetaData.type);
                                     if (!joiningTableChildRelation || !joiningTableChildRelation[0]) {
                                         throw new Error(
                                             'Expected Many-To-Many Joining table to have a "belongsTo" relation of type:' + joinMetaData.type +
@@ -1323,39 +1344,44 @@ export class JsonApiHelper {
         * links in the links object provided.
         * This will modify the response object.
         */
-    private static setParentIds(options: SerializationOptions, data: JsonApi.JsonApiData, fields: any, metaData: MetaData): string {
-        // This object belongs to a parent then search backwards in url for the
+    private static setParentIds(options: SerializationOptions, data: JsonApi.JsonApiData, fields: any, metaData: MetaData): void {
+        // This object belongs to a parent so search backwards in the self link url for the
         // parent resource and then the next field we assume contains the parent reource id
-        // e.g. api/Parent/1/Children
-        var parentRel = options.getParentRelation();
-        if (parentRel) {
-            // If Type is set and it has links and links has a self link
-            if (data.type && data.GetSelfLink && data.GetSelfLink()) {
+        // e.g. api/Parent/1/Childrelation
+        //Here 'Parent' should be the data.type of the parent, follows by its id, then the child relationship
 
-                var parentName = parentRel.relation;
-                // Get configured local key
-                var localKey = parentRel.localKey;
+        //Here: 
+        // - Parent is the name of the parent type , follows by the id.
+        // - ChildRelation - is the localField/relationName on the parent
 
-                if (!localKey) {
-                    throw new Error(
-                        'ERROR: Incorrect js-data, relationship definition on js-data resource, Name:' + options.type + 'Relationship Name:' + parentRel.relation +
-                        'A "belongsTo" relationship requires a "localKey" to be configured');
-                }
 
-                var selfLinkArray = data.GetSelfLink().split('/');
-                var parentResourceIndex = selfLinkArray.lastIndexOf(parentName);
-                if (parentResourceIndex > 0) {
-                    fields[localKey] = selfLinkArray[parentResourceIndex + 1]; // Set Parent Id
+        // Get parent link
+        if (data.type && data.GetSelfLink && data.GetSelfLink()) {
+            var selfLinkArray = data.GetSelfLink().split('/');
+
+            // Iterate over parent relations
+            // Look for parent type in self link.
+            // If found get the id and set to loalKey
+            options.enumerateAllParentRelations((rel: JSData.RelationDefinition) => {
+
+                // If we find a parent/belongsTo relationship with the same type as the parent then use it.
+                // There should only ever be one parent relationship of a given type. 
+                var parentResourceIndex = selfLinkArray.lastIndexOf(rel.relation);
+                if (parentResourceIndex >= 0 && rel.localKey) {
+                    //We found a match
+                    fields[rel.localKey] = selfLinkArray[parentResourceIndex + 1]; // Set Parent Id
                     var parentLink = selfLinkArray.slice(0, parentResourceIndex + 2).join('/');
 
-                    metaData.WithRelationshipLink(JSONAPI_PARENT_LINK, JSONAPI_PARENT_LINK, parentRel.relation, parentLink);
-                    return parentLink;
+                    // This will allow loadRelations to load this a parent relationship!!
+                    // Im not sure when it would make sense to call loadRelations on a parent link?
+                    // Maybe if somehow you got an object without first loading its parent and called load relations on the
+                    // parent relation ?
+                    metaData.WithRelationshipLink(rel.localField, JSONAPI_PARENT_LINK, rel.relation, parentLink);
+                    return false;
                 }
-            } else {
-                LogWarning('Resource ' + options.type + ' has a "belongsTo" relation but is missing a self link and so its parent relation can not be set');
-            }
+                return true;
+            });
         }
-        return null;
     }
 
     /**
@@ -1386,10 +1412,10 @@ export class JsonApiHelper {
             // This is not required oneach data item this applies to the Resource Definition
             var def: SerializationOptions = new SerializationOptions(resource);
 
-            def.enumerateAllChildRelations((relationDef: JSData.RelationDefinition) => {
+            def.enumerateRelations((relationDef: JSData.RelationDefinition) => {
                 if (typeof relationDef.load !== 'function') {
 
-                    // This adds a customrelationship load method that is called by loadRelations to override default behaviour
+                    // This adds a custom relationship load method that is called by loadRelations to override default behaviour
                     // Here we add the relationship url to options and store a reference to this functon, set the relationshipDef load functions to undefined
                     // and call loadRelations again, this time options will contain the stored relatedLink and the load function will not get re-called as we have removed it
                     // Then after loadRelations completes or fails, restore the load function once again
@@ -1400,11 +1426,17 @@ export class JsonApiHelper {
                         optionsOrig: JSData.DSAdapterOperationConfiguration) => {
 
                         var meta = MetaData.TryGetMetaData(instance);
-                        var relatedLink = meta.getRelationshipLink(relationDef.localField, JSONAPI_RELATED_LINK);
-                        var options: JsonApiAdapter.DSJsonApiAdapterOptions = <any>optionsOrig;
-                        if (relatedLink) {
-                            options.jsonApi = options.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
-                            options.jsonApi.jsonApiPath = options.jsonApi.jsonApiPath || relatedLink.url;
+                        if (meta) {
+                            var relatedLink = meta.getRelationshipLink(
+                                relationDef.localField,
+                                (relationDef.type === jsDataBelongsTo) ? JSONAPI_PARENT_LINK : JSONAPI_RELATED_LINK
+                            );
+
+                            if (relatedLink) {
+                                var options: JsonApiAdapter.DSJsonApiAdapterOptions = <any>optionsOrig;
+                                options.jsonApi = options.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
+                                options.jsonApi.jsonApiPath = options.jsonApi.jsonApiPath || relatedLink.url;
+                            }
                         }
 
                         var tmp = { target: relationDef, func: relationDef.load };

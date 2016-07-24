@@ -1,192 +1,276 @@
 ﻿describe('Resource.loadRelations(id, [relations],[options])', function () {
-    
-    describe('(METHOD#1) loadRelations', function () { 
-        it('should make a GET request to load related data, using loadRelations (METHOD#1)', function () {
-        var _this = this;
+    var ds;
+    var testData = { config: {} };
 
-        var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
-                .WithId('1')
-                .WithLink('self', '/container/1')
-                .WithRelationship('containedposts', 
-                    new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
-                        .WithLink('related', 'http://xxx/container/1/posts')
-                        .WithData('posts', '5')
-        ));
+    beforeEach(function () {
+        ds = new JSData.DS();
+        var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+            queryTransform: queryTransform
+        });
+
+        ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+
+        testData.config.userContainer = ds.defineResource({
+            name: 'container',
+            idAttribute: 'Id',
+            relations: {
+                // hasMany uses "localField" and "localKeys" or "foreignKey"
+                hasMany: {
+                    posts: {
+                        localField: 'containedposts',
+                        foreignKey: 'containerid'
+                    }
+                }
+            }
+        });
 
 
-        setTimeout(function () {
-            assert.equal(1, _this.requests.length, "First Call");
-            assert.equal(_this.requests[0].url, 'api/container/1');
-            assert.equal(_this.requests[0].method, 'GET');
-            assert.isDefined(_this.requests[0].requestHeaders);
-            assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-
-            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(container));
-        }, 30);
-
-        return UserContainer.find(1).then(function (data) {
-            assert.equal(queryTransform.callCount, 1, 'queryTransform should have been called once');
-            assert.isDefined(data, 'post response recieved');
-            assert.isDefined(data.length, 'post response is array');
-            assert.equal(data[0].Id, '1', 'post PK 1 should have been found');
-
-            assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
-            var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-                .WithLink('self', '/container/1/posts')
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
-                    .WithId('5')
-                    .WithLink('self', '/container/1/posts/5')
-                    .WithAttribute('author', 'John')
-                    .WithAttribute('age', 30)
-                )
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
-                    .WithId('10')
-                    .WithLink('self', '/container/1/posts/10')
-                    .WithAttribute('author', 'Mark')
-                    .WithAttribute('age', 25)
-                );
-
-            setTimeout(function () {
-                assert.equal(2, _this.requests.length);
-                assert.equal(_this.requests[1].url, 'http://xxx/container/1/posts');
-                assert.equal(_this.requests[1].method, 'GET');
-                
-                _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(postList));
-            }, 30);
-
-            var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
-            assert.equal(link.url, 'http://xxx/container/1/posts')
-
-            // I believe the line below and the subsequent call to Post.findAll are equivelent
-            // However the call below to "loadRelations" is more meaning full in terms of what we are trying to do.
-            // The problem is that js-data is being too smart, we want the parameters passed!! 
-            // e.g.The parent / parentId and the parent relation to load.
-            // However what ends up at the adapter is infomation about the children that would be returned
-            // which means we have to jump through hoops to try to get back this original innformation when 
-            // eventually findAll is called on the data adabter!!
-            // Please review, see  JsonApiAdapter.getPath code inside of  if (method === 'findAll') where i am trying to get the 
-            // parent and the relationship info!!!!
-            return UserContainer.loadRelations(1, ['containedposts']).then(function (data) {
-                assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
-
-                assert.isDefined(UserContainer.get(1), 'Container 1 exists');
-                assert.isDefined(UserContainer.get(1).containedposts, 'Posts  exist');
-                assert.isDefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has at least 1 child post');
-                assert.isDefined(UserContainer.get(1).containedposts[1], 'UserContainer 1 has 2 child posts 10');
-
-                assert.equal(UserContainer.get(1).containedposts[0].Id, 5, 'UserContainer 1 has child post 5');
-                assert.equal(UserContainer.get(1).containedposts[1].Id, 10, 'UserContainer 1 has child post 10');
-
-                Post.ejectAll();
-                assert.isUndefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has child post 5, ejected');
-                
-                //setTimeout(function () {
-                //    assert.equal(3, _this.requests.length, 'Should be 3rd Call');
-                //    assert.equal(_this.requests[2].url, 'http://xxx/container/1/posts');
-                //    assert.equal(_this.requests[2].method, 'GET');
-
-                //    _this.requests[2].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(postList));
-                //}, 60);
-
-                //return Post.findAll({ containerid: parent.Id }).then(function (data) {
-                //    assert.equal(queryTransform.callCount, 3, 'queryTransform should have been called 3 times');
-
-                //    assert.isDefined(UserContainer.get(1), 'Container 1 exists');
-                //    assert.isDefined(UserContainer.get(1).containedposts, 'Posts 1 exist');
-
-                //    assert.isDefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has at least 1 child post');
-                //    assert.isDefined(UserContainer.get(1).containedposts[1], 'UserContainer 1 has 2 child posts 10');
-                    
-                //    assert.equal(UserContainer.get(1).containedposts[0].Id, 5, 'UserContainer 1 has child post 5');
-                //    assert.equal(UserContainer.get(1).containedposts[1].Id, 10, 'UserContainer 1 has child post 10');
-
-                //});
-            });
+        testData.config.Post = ds.defineResource({
+            name: 'posts',
+            idAttribute: 'Id',
+            relations: {
+                belongsTo: {
+                    container: {
+                        localField: 'Container',
+                        localKey: 'containerid',
+                        //parent: true
+                    }
+                }
+            }
         });
     });
-    });
-    
-    describe('(METHOD#2) findAll', function () {
-        it('should make a GET request to load related data, using findAll (METHOD#2)', function () {
-        var _this = this;
 
-        setTimeout(function () {
-            assert.equal(1, _this.requests.length, 'First Call');
-            assert.equal(_this.requests[0].url, 'api/container/1');
-            assert.equal(_this.requests[0].method, 'GET');
-            assert.isDefined(_this.requests[0].requestHeaders, 'Headers Should be defined');
-            assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
-            
-            var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
-                    .WithId('1')
-                    .WithLink('self', '/container/1')
-                    .WithRelationship('containedposts', 
+
+
+    describe('(METHOD#1) loadRelations', function () {
+        it('should make a GET request to load related "oneToMany" data', function () {
+            var _this = this;
+
+            setTimeout(function () {
+                var index = _this.requests.length - 1;
+                assert.equal(1, _this.requests.length, 'First Call');
+                assert.equal(_this.requests[index].url, 'container/1');
+                assert.equal(_this.requests[index].method, 'GET');
+                assert.isDefined(_this.requests[index].requestHeaders);
+                assert.equal(_this.requests[index].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+                var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                    .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                        .WithId('1')
+                        .WithLink('self', '/container/1')
+                        .WithRelationship('containedposts',
                         new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
                             .WithLink('related', 'http://xxx/container/1/posts')
                             .WithData('posts', '5')
-                ));
-            _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(container));
-        }, 30);
-        
-        return UserContainer.find(1).then(function (data) {
-            assert.equal(queryTransform.callCount, 1, 'queryTransform should have been called once');
-            assert.isDefined(data, 'post response recieved');
-            assert.isDefined(data.length, 'post response is array');
-            assert.equal(data[0].Id, '1', 'post PK 1 should have been found');
-            assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
+                        ));
 
+                _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(container));
+            }, 30);
+
+            // Load data
+            return testData.config.userContainer.find(1).then(function (data) {
+                assert.equal(queryTransform.callCount, 1, 'queryTransform should have been called once');
+                assert.isDefined(data, 'post response recieved');
+                assert.isDefined(data.length, 'post response is array');
+
+                var parent = data[0];
+                assert.equal(parent.Id, '1', 'post PK 1 should have been found');
+                assert.isDefined(parent[JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "containedposts", should exist');
+                assert.isDefined(parent[JSONAPIMETATAG].relationships['containedposts']['related'], 'json api relationship for "containedposts", should have related link');
+
+                var user = testData.config.userContainer.get(1);
+                assert.isDefined(user, 'Should get Container');
+                assert.equal(user.containedposts.length, 1, 'Should have one container.containedpost');
+                assert(user.containedposts[0].IsJsonApiReference, 'Should have post and be a JsonApi reference');
+
+
+                setTimeout(function () {
+                    var index = _this.requests.length - 1;
+                    assert.equal(2, _this.requests.length, 'Second Call');
+
+                    assert.equal(_this.requests[index].url, 'http://xxx/container/1/posts', 'Should request related link from "container"resource "containedposts", toMany relationship');
+                    assert.equal(_this.requests[index].method, 'GET');
+
+                    var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                        .WithLink('self', '/container/1/posts')
+                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                            .WithId('5')
+                            .WithLink('self', '/container/1/posts/5')
+                            .WithAttribute('author', 'John')
+                            .WithAttribute('age', 30)
+                        )
+                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                            .WithId('10')
+                            .WithLink('self', '/container/1/posts/10')
+                            .WithAttribute('author', 'Mark')
+                            .WithAttribute('age', 25)
+                        );
+                    _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(postList));
+                }, 30);
+
+
+                // I believe the line below and the subsequent call to Post.findAll are equivelent
+                // However the call below to "loadRelations" is more meaning full in terms of what we are trying to do.
+                // The problem is that js-data is being too smart, we want the parameters passed!! 
+                // e.g.The parent / parentId and the parent relation to load.
+                // However what ends up at the adapter is infomation about the children that would be returned
+                // which means we have to jump through hoops to try to get back this original innformation when 
+                // eventually findAll is called on the data adabter!!
+                // Please review, see  JsonApiAdapter.getPath code inside of if (method === 'findAll') where i am trying to get the 
+                // parent and the relationship info!!!!
+                return testData.config.userContainer.loadRelations(1, ['containedposts']).then(function (data) {
+                    assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
+
+                    var userContainer = testData.config.userContainer;
+                    assert.isDefined(userContainer.get(1), 'Container 1 exists');
+                    assert.isDefined(userContainer.get(1).containedposts, 'Posts  exist');
+                    assert.isDefined(userContainer.get(1).containedposts[0], 'UserContainer 1 has at least 1 child post');
+                    assert.isDefined(userContainer.get(1).containedposts[1], 'UserContainer 1 has 2 child posts 10');
+
+                    assert.equal(userContainer.get(1).containedposts[0].Id, 5, 'UserContainer 1 has child post 5');
+                    assert.equal(userContainer.get(1).containedposts[1].Id, 10, 'UserContainer 1 has child post 10');
+                    assert.equal(userContainer.get(1).containedposts[0].IsJsonApiReference, false, 'Should have post 1 and NOT be a JsonApi reference');
+                    assert.equal(userContainer.get(1).containedposts[1].IsJsonApiReference, false, 'Should have post 10 and NOT be a JsonApi reference');
+
+                });
+            });
+        });
+
+        it('should make a GET request to load related "parent/belongsTo" relation data', function () {
+            var _this = this;
 
             setTimeout(function () {
-                assert.equal(2, _this.requests.length, 'Second call');
-                assert.equal(_this.requests[1].url, 'http://xxx/container/1/posts');
-                assert.equal(_this.requests[1].method, 'GET');
-                
-                var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                var index = _this.requests.length - 1;
+                assert.equal(1, _this.requests.length, "First Call");
+                assert.equal(_this.requests[index].url, '/container/1/containedposts');
+                assert.equal(_this.requests[index].method, 'GET');
+                assert.isDefined(_this.requests[index].requestHeaders);
+                assert.equal(_this.requests[index].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+                var posts = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                     .WithLink('self', '/container/1/posts')
                     .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
                         .WithId('5')
                         .WithLink('self', '/container/1/posts/5')
                         .WithAttribute('author', 'John')
                         .WithAttribute('age', 30)
-                    )
-                    .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
-                        .WithId('10')
-                        .WithLink('self', '/container/1/posts/10')
-                        .WithAttribute('author', 'Mark')
-                        .WithAttribute('age', 25)
-                );
+                    );
 
-                _this.requests[1].respond(
-                    200, 
-                    { 'Content-Type': 'application/vnd.api+json' }, 
-                    DSUtils.toJson(postList)
-                );
+                _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(posts));
             }, 30);
-            
 
-            var parent = data[0];
-            var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
-            assert.equal(link.url, 'http://xxx/container/1/posts');
 
-            // This call has the same effect as the above to load related data
-            return Post.findAll({ containerid: parent.Id }, { bypassCache: true, jsonApi: { jsonApiPath: link.url }}).then(function (data) {
-                assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called 2 times, find and findAll');
+            return testData.config.Post.findAll({ containerid: 1 }, { jsonApi: { jsonApiPath: '/container/1/containedposts' } }).then(function (data) {
 
-                assert.isDefined(UserContainer.get(1), 'Container 1 exists');
-                assert.isDefined(UserContainer.get(1).containedposts, 'Container 1, Posts exist');
+                setTimeout(function () {
+                    var index = _this.requests.length - 1;
+                    assert.equal(2, _this.requests.length, "First Call");
+                    assert.equal(_this.requests[index].url, '/container/1');
+                    assert.equal(_this.requests[index].method, 'GET');
+                    assert.isDefined(_this.requests[index].requestHeaders);
+                    assert.equal(_this.requests[index].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
-                assert.isDefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has at least 1 child post');
-                assert.isDefined(UserContainer.get(1).containedposts[1], 'UserContainer 1 has a 2nd child');
-                assert.equal(UserContainer.get(1).containedposts.length,2 , 'UserContainer 1 has 2 child');
+                    var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                            .WithId('1')
+                            .WithLink('self', '/container/1')
+                            .WithRelationship('containedposts',
+                            new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
+                                .WithLink('related', 'http://xxx/container/1/posts')
+                                .WithData('posts', '5')
+                            ));
 
-                assert.equal(UserContainer.get(1).containedposts[0].Id, 5, 'UserContainer 1 has child post 5');
-                assert.equal(UserContainer.get(1).containedposts[1].Id, 10, 'UserContainer 1 has child post 10');
+                    _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(container));
+                }, 30);
+
+                return testData.config.Post.loadRelations(5, ['Container']).then(function (data) {
+
+                });
             });
         });
     });
+
+
+    describe('(METHOD#2) findAll', function () {
+        it('should make a GET request to load related data, using findAll (METHOD#2)', function () {
+            var _this = this;
+
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length, 'First Call');
+                assert.equal(_this.requests[0].url, 'api/container/1');
+                assert.equal(_this.requests[0].method, 'GET');
+                assert.isDefined(_this.requests[0].requestHeaders, 'Headers Should be defined');
+                assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+
+                var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                    .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                        .WithId('1')
+                        .WithLink('self', '/container/1')
+                        .WithRelationship('containedposts',
+                        new DSJsonApiAdapter.JsonApi.JsonApiRelationship(true)
+                            .WithLink('related', 'http://xxx/container/1/posts')
+                            .WithData('posts', '5')
+                        ));
+                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(container));
+            }, 30);
+
+            return UserContainer.find(1).then(function (data) {
+                assert.equal(queryTransform.callCount, 1, 'queryTransform should have been called once');
+                assert.isDefined(data, 'post response recieved');
+                assert.isDefined(data.length, 'post response is array');
+                assert.equal(data[0].Id, '1', 'post PK 1 should have been found');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "posts", should exist');
+
+
+                setTimeout(function () {
+                    assert.equal(2, _this.requests.length, 'Second call');
+                    assert.equal(_this.requests[1].url, 'http://xxx/container/1/posts');
+                    assert.equal(_this.requests[1].method, 'GET');
+
+                    var postList = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                        .WithLink('self', '/container/1/posts')
+                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                            .WithId('5')
+                            .WithLink('self', '/container/1/posts/5')
+                            .WithAttribute('author', 'John')
+                            .WithAttribute('age', 30)
+                        )
+                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                            .WithId('10')
+                            .WithLink('self', '/container/1/posts/10')
+                            .WithAttribute('author', 'Mark')
+                            .WithAttribute('age', 25)
+                        );
+
+                    _this.requests[1].respond(
+                        200,
+                        { 'Content-Type': 'application/vnd.api+json' },
+                        DSUtils.toJson(postList)
+                    );
+                }, 30);
+
+
+                var parent = data[0];
+                var link = parent[JSONAPIMETATAG].relationships['containedposts']['related'];
+                assert.equal(link.url, 'http://xxx/container/1/posts');
+
+                // This call has the same effect as the above to load related data
+                return Post.findAll({ containerid: parent.Id }, { bypassCache: true, jsonApi: { jsonApiPath: link.url } }).then(function (data) {
+                    assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called 2 times, find and findAll');
+
+                    assert.isDefined(UserContainer.get(1), 'Container 1 exists');
+                    assert.isDefined(UserContainer.get(1).containedposts, 'Container 1, Posts exist');
+
+                    assert.isDefined(UserContainer.get(1).containedposts[0], 'UserContainer 1 has at least 1 child post');
+                    assert.isDefined(UserContainer.get(1).containedposts[1], 'UserContainer 1 has a 2nd child');
+                    assert.equal(UserContainer.get(1).containedposts.length, 2, 'UserContainer 1 has 2 child');
+
+                    assert.equal(UserContainer.get(1).containedposts[0].Id, 5, 'UserContainer 1 has child post 5');
+                    assert.equal(UserContainer.get(1).containedposts[1].Id, 10, 'UserContainer 1 has child post 10');
+                });
+            });
+        });
     });
     
     describe('(METHOD#3) findRelated', function () {

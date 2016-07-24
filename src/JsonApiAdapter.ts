@@ -136,6 +136,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         */
     getPath(method: string, resourceConfig: JSData.DSResourceDefinition<any>, id: Object, options: JSData.DSConfiguration): string {
 
+        //(<JsonApiAdapter.DSJsonApiAdapterOptions>options).jsonApi.jsonApiPath;
         if (Helper.JsonApiHelper.ContainsJsonApiContentTypeHeader(this.DSUtils.get<{ [name: string]: string }>(options, 'headers'))) {
             //Get the resource item
             var item: JsonApi.JsonApiData;
@@ -159,6 +160,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                     // ANOTHER option is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
 
                     //[1] Get back the parent object referenced in finaAll / loadRelations
+                    // This requires a belongsTo relationship with parent set true!!
                     let parentResourceName = (<any>resourceConfig).parent;
 
                     // The local key of the child <==> the foreign key of the parent
