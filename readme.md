@@ -67,7 +67,7 @@ Or alternaticely to use an existing HttpAdapter for example when using js-data-a
 ```
 
 ### Version
-0.0.0-alpha.14
+0.0.0-alpha.15
 
 ### Tech
 
