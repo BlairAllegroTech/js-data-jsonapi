@@ -1014,6 +1014,21 @@ export class JsonApiHelper {
             });
         }
 
+        // Remove all local keys
+        if (data.attributes) {
+            options.enumerateRelations((relation: JSData.RelationDefinition) => {
+
+                var localKeys = relation.localKey || relation.localKeys;
+                if (localKeys) {
+                    if (DSUTILS.get<any>(data.attributes, localKeys)) {
+                        delete data.attributes[localKeys];
+                    }
+                }
+
+                return true;
+            });
+        }
+
         return data;
     }
 

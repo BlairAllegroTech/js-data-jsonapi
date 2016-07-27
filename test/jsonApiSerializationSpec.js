@@ -160,54 +160,115 @@
     });
 
     describe('Attributes Values', function () {
+
+        var ds;
+        var testData = { config: {} };
+
+        beforeEach(function () {
+            //Create js-data
+            ds = new JSData.DS();
+            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                queryTransform: queryTransform
+            });
+
+            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+
+            // Configure js-data resources
+            testData.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+                relations: {
+                    hasMany: {
+                        article: {
+                            localField: 'articles',
+                            foreignKey: 'authorid'
+                        }
+                    }
+                }
+            });
+
+            testData.config.Article = ds.defineResource({
+                name: 'article',
+                idAttribute: 'id',
+                relations: {
+                    hasOne: {
+                        author: {
+                            localField: 'author',
+                            localKey: 'authorid'
+                        }
+                    }
+                }
+            });
+        });
+
         it('should deserialize Json Data when attributes contain null values', function () {
             var _this = this;
-            
-            var testData = {};
-            testData.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest();
-            testData.jsonApiData.WithData(
-                new DSJsonApiAdapter.JsonApi.JsonApiData('testuser')
-                    .WithId('2')
-                    .WithAttribute('author', 'John')
-                    .WithAttribute('age', 31)
-                    .WithAttribute('NullValue', null));
-            
-            testData.model = [{ Id: '2', author: 'John', age: 31 }]; //ISMODEL: true, type: 'testuser'
-            
-            var TestUser = datastore.defineResource({
-                name: 'testuser',
-                idAttribute: 'id'
-            });
-            
-            
+
             setTimeout(function () {
-                assert.equal(1, _this.requests.length);
-                assert.equal(_this.requests[0].url, 'api/testuser');
-                assert.equal(_this.requests[0].method, 'POST');
-                assert.isDefined(_this.requests[0].requestHeaders, 'Request Contains headers');
-                assert.equal(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
-                assert.include(_this.requests[0].requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
-                assert.equal(_this.requests[0].requestBody, DSUtils.toJson({
+                assert.equal(1, _this.requests.length, "First Call");
+                var request = _this.requests[_this.requests.length - 1];
+
+
+                assert.equal(request.method, 'POST');
+                assert.isDefined(request.requestHeaders, 'Request Contains headers');
+                assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
+                assert.include(request.requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
+                assert.equal(request.requestBody, DSUtils.toJson({
                     data: {
                         //id: '', 
-                        type: 'testuser', 
-                        attributes: { author: 'John', age: 32 }
+                        type: 'author', 
+                        attributes: { name: 'John', age: 32 }
                         //links: {}, 
                         //relationships: {}
                     }
                 }), 'Json data serialized to jsonApi data correctly');
-                
-                var json =  DSUtils.toJson(testData.jsonApiData);
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
+
+                var response = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                    .WithData(
+                    new DSJsonApiAdapter.JsonApi.JsonApiData('author')
+                        .WithId('2')
+                        .WithAttribute('name', 'John')
+                        .WithAttribute('age', 31)
+                        .WithAttribute('NullValue', null)
+                    );
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
             }, 30);
             
-            return dsHttpAdapter.create(TestUser, { author: 'John', age: 32 }, { basePath: 'api' }).then(function (data) {
+            return dsHttpAdapter.create(testData.config.Author, { name: 'John', age: 32 }).then(function (data) {
+
                 assert.isDefined(data, 'Data should be returned');
-                assert.isDefined(data[0], 'Data should be returned in first indexof array')
+                assert.isDefined(data[0], 'Data should be returned in first index of array')
+
                 assert.isDefined(data[0].NullValue, 'NullValue deserialised');
                 assert.equal(data[0].NullValue, null, 'Null value set to null');
-
             });
+        });
+
+        it('sould not serialize js-data localKey or LocalKeys into attribute values', function () {
+            var _this = this;
+            var author = testData.config.Author.inject({ id: 1, name: 'Bob' });
+
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length, "First Call");
+                var request = _this.requests[_this.requests.length - 1];
+
+
+                assert.equal(request.method, 'POST');
+                assert.isDefined(request.requestHeaders, 'Request Contains headers');
+                assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
+                assert.include(request.requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+                var req = JSON.parse(request.requestBody);
+                assert.equal(req.data.attributes.title, 'js-data', 'normal attributes should be sent');
+                assert.isUndefined(req.data.attributes.authorid, 'Article localKey "authorid" should not be serialized');
+
+                // Simulate server saving and asigning an id
+                req.data.id = 1;
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(req));
+            }, 30);
+
+            return testData.config.Article.create({ title: 'js-data', authorid: 1 });
         });
     });
 
