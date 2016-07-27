@@ -16,20 +16,20 @@ export class JsonApiRequest {
         //this.jsonapi.version = '1.0';
     }
 
-    GetErrorsAsString(): string {
+    //GetErrorsAsString(): string {
 
-        var err: string = '';
-        if (this.errors && this.errors.length) {
-            for (var i = 0; i < this.errors.length; i++) {
-                err += this.errors[i].detail + ' ';
-            }
-            err = err.trim();
-        } else {
-            //Should not ever happen
-            err = 'No response from server';
-        }
-        return err;
-    }
+    //    var err: string = '';
+    //    if (this.errors && this.errors.length) {
+    //        for (var i = 0; i < this.errors.length; i++) {
+    //            err += this.errors[i].detail + ' ';
+    //        }
+    //        err = err.trim();
+    //    } else {
+    //        //Should not ever happen
+    //        err = 'No response from server';
+    //    }
+    //    return err;
+    //}
 
     WithError(error: JsonApiError): JsonApiRequest {
         this.errors = this.errors || new Array<JsonApiError>();

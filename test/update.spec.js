@@ -301,7 +301,7 @@ describe('Update Tests', function () {
         });
     });
 
-    describe('DS#updateAll', function () {
+    describe('DS#updateAll (Create Multiple)', function () {
         var ds;
         var testData = { config: {} };
 
@@ -368,7 +368,7 @@ describe('Update Tests', function () {
                 _this.requests[0].respond(201, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(response));
             }, 30);
 
-            return ds.updateAll('author', [{ name: 'Rob', age: 36 }, { name: 'Bob', age: 63 }], {}, { method: 'POST' }).then(function (data) {
+            return ds.updateAll('author', [{ name: 'Rob', age: 36 }, { name: 'Bob', age: 63 }], {}, {method:'POST', jsonApi: { usePATCH : false} }).then(function (data) {
                 assert.isDefined(data, 'Result Should exist');
                 assert.isArray(data, 'Result should be a list');
                 assert.equal(data[0].name, 'Rob');

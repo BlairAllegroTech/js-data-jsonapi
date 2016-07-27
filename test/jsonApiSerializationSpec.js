@@ -151,7 +151,7 @@
                     assert(false, 'internal server error response should NOT have succeed');
                 }, 
                 function (error) {
-                    console.warn('Error:', error);
+                    console.log('Expected Error:', error);
                     assert.deepEqual(error, errorResponse, 'returned server error response');
                 }
             );
@@ -209,6 +209,110 @@
 
             });
         });
+    });
+
+    describe('Attribute Changes', function () {
+        var ds;
+        var testData = { config: {} };
+
+        beforeEach(function () {
+            //Create js-data
+            ds = new JSData.DS();
+            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                queryTransform: queryTransform
+            });
+
+            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+
+            // Configure js-data resources
+            testData.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+                relations: {
+                    hasMany: {
+                        article: {
+                            localField: 'articles',
+                            foreignKey: 'authorid'
+                        }
+                    }
+                }
+            });
+
+            testData.config.Article = ds.defineResource({
+                name: 'article',
+                idAttribute: 'id',
+                relations: {
+                    hasOne: {
+                        author: {
+                            localField: 'author',
+                            localKey: 'authorid'
+                        }
+                    }
+                }
+            });
+        });
+
+        it('should serialize changes to Data correctly include; Updated, Added attributes and removed attributes with a value of null', function () {
+            var _this = this;
+
+            setTimeout(function () {
+
+                assert.equal(1, _this.requests.length, "First Call");
+                var request = _this.requests[_this.requests.length - 1];
+
+                assert.equal(request.url, 'author');
+                assert.equal(request.method, 'POST');
+                assert.isDefined(request.requestHeaders, 'Request Contains headers');
+
+                assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
+                assert.include(request.requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+                var req = JSON.parse(request.requestBody);
+                req.data.id = '3';
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(req));
+            }, 30);
+
+
+            // Save to adapter, so that ds resets change tracking
+            return testData.config.Author.create({ name: 'John', age: 32, test: 'unchanged' }).then(function () {
+
+                setTimeout(function () {
+
+                    assert.equal(2, _this.requests.length, "Second Call");
+                    var request = _this.requests[_this.requests.length - 1];
+
+                    assert.equal(request.url, 'author/3');
+                    assert.equal(request.method, 'PATCH');
+                    assert.isDefined(request.requestHeaders, 'Request Contains headers');
+
+                    assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
+                    assert.include(request.requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+
+                    var req = JSON.parse(request.requestBody);
+                    assert.equal(req.data.attributes.gender, 'M', 'Should add "gender" attribute');
+                    assert.equal(req.data.attributes.name, 'Bob', 'Should update "author" attribute');
+                    assert.equal(req.data.attributes.age, null, 'Should update "age" to null as removed');
+                    assert.isUndefined(req.data.attributes.test, 'Should NOT update un chnaged "test" attribute');
+
+                    request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, request.requestBody);
+                }, 30);
+
+                var author = testData.config.Author.get(3);
+                author.gender = 'M';    //Add
+                author.name = 'Bob';    // Update
+                delete author.age;      //Delete
+
+                // console.log('Author Changes', author.DSChanges());
+
+                return testData.config.Author.save(3);
+            });
+
+
+
+        });
+
     });
 
     describe('To Many Relationships', function () {
@@ -292,7 +396,7 @@
     describe('To One Relationships, see : http://jsonapi.org/format/#fetching-relationships', function () {
         var ds;
         var testData = { config: {} };
-        
+
         beforeEach(function () {
             //Create js-data
             ds = new JSData.DS();

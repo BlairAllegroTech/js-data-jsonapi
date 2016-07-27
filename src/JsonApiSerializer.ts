@@ -912,27 +912,6 @@ export class JsonApiHelper {
         }
     }
 
-    private static CreateErrorResponse(title: string, detail: string): JsonApi.JsonApiRequest {
-        var response = new JsonApi.JsonApiRequest();
-        var e = new JsonApi.JsonApiError();
-        e.title = title;
-        e.detail = detail;
-        response.WithError(e);
-
-        return response;
-    }
-
-    private static CreateNoResponseError() {
-        var responseObj = new JsonApi.JsonApiRequest();
-
-        var e = new JsonApi.JsonApiError();
-        e.title = 'No response from server';
-        e.detail = e.title;
-        responseObj.WithError(e);
-
-        return responseObj;
-    }
-
     private static CreateInvalidResponseError(response: any) {
         var responseObj = new JsonApi.JsonApiRequest();
 
@@ -953,21 +932,51 @@ export class JsonApiHelper {
 
         var data = new JsonApi.JsonApiData(options.type);
 
-        var changes = attrs;
         //JsonApi id is always a string, it can be empty for a new unstored object!
         if (attrs[options.idAttribute]) {
             data.WithId(attrs[options.idAttribute]);
-            changes = (config.changes === true) ? (<JSData.DSResourceDefinition<any>>options.def()).changes(attrs[options.idAttribute]) : changes;
         }
 
         // Take object attributes
-        DSUTILS.forOwn(changes, (value: any, prop: string) => {
-            // Skip id attribute as it has already been copied to the id field out side of the attributes collection
-            // Skip any non-json api compliant tags
-            if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
-                data.WithAttribute(prop, value);
+        if (config.changes && attrs[options.idAttribute]) {
+            var id = attrs[options.idAttribute];
+            if ((<JSData.DSResourceDefinition<any>>options.def()).hasChanges(id)) {
+                var changes = (<JSData.DSResourceDefinition<any>>options.def()).changes(id);
+
+                DSUTILS.forOwn(changes['added'], (value: any, prop: string) => {
+                    // Skip id attribute as it has already been copied to the id field out side of the attributes collection
+                    // Skip any non-json api compliant tags
+                    if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
+                        data.WithAttribute(prop, value);
+                    }
+                });
+
+                DSUTILS.forOwn(changes['changed'], (value: any, prop: string) => {
+                    // Skip id attribute as it has already been copied to the id field out side of the attributes collection
+                    // Skip any non-json api compliant tags
+                    if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
+                        data.WithAttribute(prop, value);
+                    }
+                });
+
+                DSUTILS.forOwn(changes['removed'], (value: any, prop: string) => {
+                    // Skip id attribute as it has already been copied to the id field out side of the attributes collection
+                    // Skip any non-json api compliant tags
+                    if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
+                        data.WithAttribute(prop, null);
+                    }
+                });
             }
-        });
+
+        } else {
+            DSUTILS.forOwn(attrs, (value: any, prop: string) => {
+                // Skip id attribute as it has already been copied to the id field out side of the attributes collection
+                // Skip any non-json api compliant tags
+                if (prop !== options.idAttribute && prop !== JSONAPI_META && prop.indexOf('$') < 0) {
+                    data.WithAttribute(prop, value);
+                }
+            });
+        }
 
         // Get object related data
         // Create should always send relationships
@@ -979,20 +988,19 @@ export class JsonApiHelper {
 
                 if (relation.type === jsDataHasMany) {
                     var relationship = new JsonApi.JsonApiRelationship(true);
-                    var relatedObjects = DSUTILS.get<any[]>(changes, relation.localField);
+                    var relatedObjects = DSUTILS.get<any[]>(attrs, relation.localField);
                     if (relatedObjects) {
                         //This is a relationship so add data as relationship
                         DSUTILS.forEach(relatedObjects, (item: any) => {
                             relationship.WithData(relation.relation, item[relatedDef.idAttribute]);
                         });
                     }
-
                     data.WithRelationship(relation.localField, relationship);
                 }
 
                 if (relation.type === jsDataHasOne) {
                     var relationship: JsonApi.JsonApiRelationship = null;
-                    var relatedObject = DSUTILS.get<any>(changes, relation.localField);
+                    var relatedObject = DSUTILS.get<any>(attrs, relation.localField);
                     if (relatedObject) {
                         relationship = new JsonApi.JsonApiRelationship(false)
                             .WithData(relation.relation, relatedObject[relatedDef.idAttribute]);

@@ -222,12 +222,28 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         * @returns {object} options copy of options with serializers configured for jsonapi
         * @memberOf JsonApiAdapter
         */
-    configureSerializers(options?: JSData.DSConfiguration): JsonApiAdapter.DSJsonApiAdapterOptions {
-        var callOptions: JsonApiAdapter.DSJsonApiAdapterOptions = <JsonApiAdapter.DSJsonApiAdapterOptions>(this.DSUtils.copy(options) || {});
-        callOptions.jsonApi = callOptions.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
+    configureSerializers(options?: JSData.DSConfiguration, locals?: JsonApiAdapter.DSJsonApiAdapterOptions): JsonApiAdapter.DSJsonApiAdapterOptions {
 
-        // Passed options take priority over defaults
-        this.DSUtils.fillIn(callOptions.jsonApi, this.defaults.jsonApi);
+        // Order for priority 
+        // 1) options
+        // 2) local overrides
+        // 3) defaults
+
+        //// 1) Options, Passed options take priority over defaults
+        //var callOptions: JsonApiAdapter.DSJsonApiAdapterOptions = <JsonApiAdapter.DSJsonApiAdapterOptions>(this.DSUtils.copy(options) || {});
+        //callOptions.jsonApi = callOptions.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
+
+        //if (locals) {
+        //    this.DSUtils.fillIn(callOptions, locals);
+        //}
+
+        //// 2) Passed options take priority over defaults
+        //this.DSUtils.fillIn(callOptions.jsonApi, this.defaults.jsonApi);
+
+        var callOptions: JsonApiAdapter.DSJsonApiAdapterOptions = {};
+        this.DSUtils.deepMixIn(callOptions, this.DSUtils.copy(this.defaults));
+        this.DSUtils.deepMixIn(callOptions, locals);
+        this.DSUtils.deepMixIn(callOptions, options);
 
         //Json Api requires accept header
         callOptions['headers'] = callOptions['headers'] || {};
@@ -260,6 +276,8 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
 
         return callOptions;
     }
+
+
 
     // DSHttpAdapter uses axios or $http, so options are axios config objects or $http config options.
 
@@ -296,29 +314,30 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
           });
     }
 
-    //public DEL(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {                        
+    //public DEL(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {
     //    return this.adapter.DEL(url, data, this.configureSerializers(options));
     //}
 
-    //public GET(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {        
+    //public GET(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {
     //    return this.adapter.GET(url, data, this.configureSerializers(options));
     //}
 
-    //public POST(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {        
+    //public POST(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {
     //    return this.adapter.POST(url, data, this.configureSerializers(options));
     //}
 
-    //public PUT(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {                    
+    //public PUT(url: string, data?: Object, options?: Object): JSData.JSDataPromise<JSData.DSHttpAdapterPromiseResolveType> {
     //    return this.adapter.PUT(url, data, this.configureSerializers(options));
     //}
 
 
     // IDSAdapter
     public create(config: JSData.DSResourceDefinition<any>, attrs: Object, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
-        let localOptions = this.configureSerializers(options);
 
         // Create semantics require sending relationships
-        //localOptions.jsonApi.updateRelationships = true;
+        //, <JsonApiAdapter.DSJsonApiAdapterOptions>{jsonApi: { updateRelationships: true }}
+        let localOptions = this.configureSerializers(options);
+
 
         // Id
         if (attrs[config.idAttribute]) {
@@ -360,11 +379,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         let idString = id.toString();
         let localOptions = this.configureSerializers(options);
         return this.adapter.find(config, idString, localOptions).then(
-            //(response: any) => {
-            //    return this.DSUtils.Promise.resolve(this.DSUtils.isArray(response) ? response[0] : response);                
-            //}
             null,
-
             (error : any) => {
                 return this.DSUtils.Promise.reject(this.HandleError(config, localOptions, error));
             }
@@ -393,17 +408,15 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
             attrs[config.idAttribute] = idString;
         }
 
+        // Use Jsonapi PATCH symantics and only send changes by default
         let localOptions = this.configureSerializers(options);
-        if (localOptions.jsonApi.usePATCH === true) {
-            // Use Jsonapi PATCH symantics
-            localOptions.method = localOptions.method || 'patch';
-        } else {
-            localOptions.jsonApi.updateRelationships = true;
-        }
 
-        //If we are using patch then just send changes by default
-        if (localOptions.method === 'patch') {
-            localOptions.changes = (localOptions.changes === false) ? false : true;
+        // If not using PATCH semantics and are doing a POST/Create we must send relationships
+        if (localOptions.jsonApi.usePATCH === false) {
+            localOptions.jsonApi.updateRelationships = (localOptions.jsonApi.updateRelationships === undefined) ? true : localOptions.jsonApi.updateRelationships;
+        } else {
+            localOptions.method = localOptions.method || 'patch';
+            localOptions.changes = (localOptions.changes === undefined) ? true : localOptions.changes;
         }
 
         return this.adapter.update(config, idString, attrs, localOptions).then(
@@ -415,12 +428,18 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
     }
 
     public updateAll(config: JSData.DSResourceDefinition<any>, attrs: Object, params?: JSData.DSFilterArg, options?: JSData.DSConfiguration): JSData.JSDataPromise<any> {
+
+        // Use Jsonapi PATCH symantics and only send changes by default
         let localOptions = this.configureSerializers(options);
 
-        if (!localOptions.method && localOptions.jsonApi.usePATCH === true) {
-            // Use Jsonapi PATCH symantics
-            localOptions.method = 'patch';
+        // If not using PATCH semantics and are doing a POST/Create we must send relationships
+        if (localOptions.jsonApi.usePATCH === false) {
+            localOptions.jsonApi.updateRelationships = (localOptions.jsonApi.updateRelationships === undefined) ? true : localOptions.jsonApi.updateRelationships;
+        } else {
+            localOptions.method = localOptions.method || 'patch';
+            localOptions.changes = (localOptions.changes === undefined) ? true : localOptions.changes;
         }
+
 
         return this.adapter.updateAll(config, attrs, params, localOptions).then(
             null,

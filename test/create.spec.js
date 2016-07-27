@@ -6,13 +6,13 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         beforeEach(function () {
             response.model = [{ Id: '5', age: 32, author: 'John', type: 'person' }];
             response.jsonApiData = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
-            .WithId('5')
-            .WithAttribute('author', 'John')
-            .WithAttribute('age', 32)
-            .WithAttribute('type', 'person')
-            //.WithLink('self', '/container/1/posts/5')
-            );
+                .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                    .WithId('5')
+                    .WithAttribute('author', 'John')
+                    .WithAttribute('age', 32)
+                    .WithAttribute('type', 'person')
+                    //.WithLink('self', '/container/1/posts/5')
+                    );
         });
         
         it('should make a POST request, and NOT include id when not specified by client', function () {
@@ -197,6 +197,101 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
         });
     });
     
-    describe('DS Create', function () {});
+    describe('DS Create', function () {
+        var ds;
+        var testData = { config: {} };
+
+        beforeEach(function () {
+            //Create js-data
+            ds = new JSData.DS();
+            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                queryTransform: queryTransform
+            });
+
+            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+
+            // Configure js-data resources
+            testData.config.Author = ds.defineResource({
+                name: 'author',
+                idAttribute: 'id',
+                relations: {
+                    hasMany: {
+                        article: {
+                            localField: 'articles',
+                            foreignKey: 'authorid'
+                        }
+                    }
+                }
+            });
+
+            testData.config.Article = ds.defineResource({
+                name: 'article',
+                idAttribute: 'id',
+                relations: {
+                    hasOne: {
+                        author: {
+                            localField: 'author',
+                            localKey: 'authorid'
+                        }
+                    }
+                }
+            });
+        });
+
+
+        it('Should make a POST request and send relationship data', function () {
+            var _this = this;
+
+            setTimeout(function () {
+
+                assert.equal(1, _this.requests.length, "First Call");
+                var request = _this.requests[_this.requests.length - 1];
+
+                assert.equal(request.url, 'author/3');
+                assert.equal(request.method, 'PATCH');
+                assert.isDefined(request.requestHeaders, 'Request Contains headers');
+
+                assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
+                assert.include(request.requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
+                assert.equal(request.requestBody, DSUtils.toJson({
+                    data: {
+                        id: '3', 
+                        type: 'author',
+                        attributes: { author: 'John', age: 32 },
+                        relationships: {
+                            articles: {
+                                links: {},
+                                data: [
+                                    { id: '1', type: 'article' },
+                                    { id: '2', type: 'article' }
+                                ]
+                            }
+                        },
+                       
+                    }
+                }), 'Json data serialized to jsonApi data correctly, with related data');
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, request.requestBody);
+            }, 30);
+
+
+
+            var article1 = ds.inject('article', { id: '1', name: 'author#1' });
+            var article2 = ds.inject('article', { id: '2', name: 'author#2' });
+            var author1 = ds.inject('author', { id:'3', author: 'John', age: 32 });
+
+
+            article1.authorid = 3;
+            article2.authorid = 3;
+
+            console.log('Author Changes', author1.DSChanges());
+            console.log('Article#1 Changes', article1.DSChanges());
+
+            return testData.config.Author.save(3, {changes:false, jsonApi: { updateRelationships: true } }).then(function (data) {
+
+            })
+        });
+
+    });
 
 });
