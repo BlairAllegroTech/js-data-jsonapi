@@ -56,6 +56,9 @@ module.exports = function (config) {
         
         // list of files / patterns to load in the browser
         files: [
+            // simple pattern to load the needed testfiles
+            // equal to {pattern: 'test/unit/*.spec.js', watched: true, served: true, included: true}
+
             'node_modules/es6-promise/dist/es6-promise.js',
             'node_modules/axios/dist/axios.js',
             'node_modules/js-data/dist/js-data.js',
@@ -63,7 +66,7 @@ module.exports = function (config) {
             'dist/js-data-jsonapi.js',
 
             'karma.start.js',
-            'test/**/*.js',
+            'test/*.js',
 
             'examples/**/*.js',
 

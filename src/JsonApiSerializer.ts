@@ -230,6 +230,7 @@ export class SerializationOptions {
      * @param localFieldName The local field name for the relationship, incase there is more than one relationship on the object of the given type
         */
     getChildRelationWithLocalField(relationType: string, localFieldName: string): JSData.RelationDefinition {
+
         relationType = relationType.toLowerCase();
         localFieldName = localFieldName.toLowerCase();
 

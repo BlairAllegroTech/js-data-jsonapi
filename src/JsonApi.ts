@@ -147,13 +147,20 @@ export class JsonApiRelationship {
         }
     }
 
+
+
     WithData(type: string, id: string): JsonApiRelationship {
-        if (this.data && Array.isArray(this.data)) {
-            (<JsonApiData[]>this.data).push(new JsonApiData(type).WithId(id));
+
+        if (type && id) {
+            if (this.data && Array.isArray(this.data)) {
+                (<JsonApiData[]>this.data).push(new JsonApiData(type).WithId(id));
+            } else {
+                this.data = new JsonApiData(type).WithId(id);
+            }
+            return this;
         } else {
-            this.data = new JsonApiData(type).WithId(id);
+            throw new Error('Invalid call to "JsonApiRelationship.WithData" type and id required');
         }
-        return this;
     }
 
     AddLink(linkType: string, link: MetaLink): JsonApiRelationship {
