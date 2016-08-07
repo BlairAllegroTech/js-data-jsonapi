@@ -196,8 +196,8 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
             })
         });
     });
-    
-    describe('DS Create', function () {
+
+    describe('DS Create:', function () {
         var ds;
         var testData = { config: {} };
 
@@ -220,21 +220,26 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                             localField: 'articles',
                             foreignKey: 'authorid'
                         }
+                    },
+
+                    hasOne: {
+                        address: {
+                            localField: 'address',
+                            foreignKey: 'authorid'
+                        }
                     }
+
                 }
+            });
+
+            testData.config.Address = ds.defineResource({
+                name: 'address',
+                idAttribute: 'id'
             });
 
             testData.config.Article = ds.defineResource({
                 name: 'article',
-                idAttribute: 'id',
-                relations: {
-                    hasOne: {
-                        author: {
-                            localField: 'author',
-                            localKey: 'authorid'
-                        }
-                    }
-                }
+                idAttribute: 'id'
             });
         });
 
@@ -259,12 +264,18 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
                         type: 'author',
                         attributes: { author: 'John', age: 32 },
                         relationships: {
+                            // To many relation
                             articles: {
                                 links: {},
                                 data: [
                                     { id: '1', type: 'article' },
                                     { id: '2', type: 'article' }
                                 ]
+                            },
+                            // To one relation
+                            address: {
+                                links: {},
+                                data: { id: '1', type: 'address' }
                             }
                         },
                        
@@ -277,12 +288,15 @@ describe('DSJsonApiAdapter.create(resourceConfig, attrs, options)', function () 
 
 
             var article1 = ds.inject('article', { id: '1', name: 'author#1' });
+            var address = ds.inject('address', { id: '1', street: 'Street' });
+
             var article2 = ds.inject('article', { id: '2', name: 'author#2' });
             var author1 = ds.inject('author', { id:'3', author: 'John', age: 32 });
 
 
             article1.authorid = 3;
             article2.authorid = 3;
+            address.authorid = 3;
 
             console.log('Author Changes', author1.DSChanges());
             console.log('Article#1 Changes', article1.DSChanges());
