@@ -146,46 +146,46 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                 item = <any>id;
             }
 
-            var jsonApiPath = this.DSUtils.get(options, 'jsonApi.jsonApiPath');
+            var jsonApiPath : string = this.DSUtils.get<string>(options, 'jsonApi.jsonApiPath');
             if (jsonApiPath) {
                 // Discard any additional parameters as we have the path recorded from a JsonApi response!
                 (<any>options).params = {};
-            } else {
+            //} else {
 
-                if (method === 'findAll') {
-                    // EXPERIMENTAL CODE
-                    // Here id is a params object that contains a parent id (actuallly stored in options.params)
-                    // The resource is the definition of the child items (which we intend to return).
-                    // We want to get hold of the the parent Id, so that we can get the related link from the parent, of the relationship originally passed to loadRelations.
-                    // ANOTHER option is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
+            //    if (method === 'findAll') {
+            //        // EXPERIMENTAL CODE
+            //        // Here id is a params object that contains a parent id (actuallly stored in options.params)
+            //        // The resource is the definition of the child items (which we intend to return).
+            //        // We want to get hold of the the parent Id, so that we can get the related link from the parent, of the relationship originally passed to loadRelations.
+            //        // ANOTHER option is to pass the relationship self link in options, but would prefer to be able to obtains this transparently!!
 
-                    //[1] Get back the parent object referenced in finaAll / loadRelations
-                    // This requires a belongsTo relationship with parent set true!!
-                    let parentResourceName = (<any>resourceConfig).parent;
+            //        //[1] Get back the parent object referenced in finaAll / loadRelations
+            //        // This requires a belongsTo relationship with parent set true!!
+            //        let parentResourceName = (<any>resourceConfig).parent;
 
-                    // The local key of the child <==> the foreign key of the parent
-                    let foreignKeyName = (<any>resourceConfig).parentKey;
+            //        // The local key of the child <==> the foreign key of the parent
+            //        let foreignKeyName = (<any>resourceConfig).parentKey;
 
-                    if (parentResourceName && foreignKeyName && (<any>options).params && ((<any>options).params)[foreignKeyName]) {
-                        let pk = ((<any>options).params)[foreignKeyName];
-                        let parentRes: JSData.DSResourceDefinition<any> = (<any>resourceConfig.getResource(parentResourceName));
-                        var parentItem = parentRes.get(pk);
-                        var parentResource = new Helper.SerializationOptions(parentRes);
+            //        if (parentResourceName && foreignKeyName && (<any>options).params && ((<any>options).params)[foreignKeyName]) {
+            //            let pk = ((<any>options).params)[foreignKeyName];
+            //            let parentRes: JSData.DSResourceDefinition<any> = (<any>resourceConfig.getResource(parentResourceName));
+            //            var parentItem = parentRes.get(pk);
+            //            var parentResource = new Helper.SerializationOptions(parentRes);
 
-                        // We need the nameof the relationship!!
-                        var parentChildRelation = parentResource.getChildRelationWithForeignKey(resourceConfig.name, foreignKeyName);
+            //            // We need the nameof the relationship!!
+            //            var parentChildRelation = parentResource.getChildRelationWithForeignKey(resourceConfig.name, foreignKeyName);
 
-                        if (parentItem) {
-                            var metaData = Helper.MetaData.TryGetMetaData(parentItem);
-                            if (metaData) {
-                                var relationLink = metaData.getRelationshipLink(parentChildRelation.localField, Helper.JSONAPI_RELATED_LINK); //resourceConfig.name,
-                                if (relationLink) {
-                                    (<any>options).params = {};
-                                    jsonApiPath = relationLink.url;
-                                }
-                            }
-                        }
-                    }
+            //            if (parentItem) {
+            //                var metaData = Helper.MetaData.TryGetMetaData(parentItem);
+            //                if (metaData) {
+            //                    var relationLink = metaData.getRelationshipLink(parentChildRelation.localField, Helper.JSONAPI_RELATED_LINK); //resourceConfig.name,
+            //                    if (relationLink) {
+            //                        (<any>options).params = {};
+            //                        jsonApiPath = relationLink.url;
+            //                    }
+            //                }
+            //            }
+            //        }
                 } else {
                     //|| method === 'destroy' || method === 'save' || method === 'find'
                     // Only existing objects should have meta data, for find this could be a model reference
@@ -196,18 +196,21 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                             jsonApiPath = metaData.selfLink;
                         }
                     }
-                }
+             //   }
             }
 
-            //var pk = this.DSUtils.resolveId(resourceConfig, id);
-            //rejectvar item = resourceConfig.get(<any>pk);
 
-            // See if we have the item self link stored, if so useit directly
-            //var url = (item && item.GetSelfLink)
-            //    ? item.GetSelfLink()
-            //    : null;
+            var basePath: string = options.basePath || this.defaults['basePath'] || resourceConfig.basePath;
 
-            return jsonApiPath ? jsonApiPath : this.adapterGetPath.apply(this.adapter, [method, resourceConfig, id, options]);
+            if (jsonApiPath) {
+                if (basePath && jsonApiPath.substr(0, basePath.length) === basePath) {
+                    return jsonApiPath;
+                } else {
+                    return this.DSUtils.makePath(basePath, jsonApiPath);
+                }
+            } else {
+                return this.adapterGetPath.apply(this.adapter, [method, resourceConfig, id, options]);
+            }
         } else {
             return this.adapterGetPath.apply(this.adapter, [method, resourceConfig, id, options]);
         }
