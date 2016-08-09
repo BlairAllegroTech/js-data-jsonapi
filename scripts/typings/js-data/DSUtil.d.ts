@@ -63,5 +63,7 @@
         fillIn: <T>(target:T, obj:any) => T;
         toJson: (data: any) => string;
 
+        makePath(...paths: string[]): string;
+
     }
 }
