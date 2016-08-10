@@ -4,7 +4,9 @@
 
     beforeEach(function () {
         ds = new JSData.DS();
+        var http = new DSHttpAdapter({});
         var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+            adapter: http,
             queryTransform: queryTransform,
             basePath: 'http://xxx/'
         });
