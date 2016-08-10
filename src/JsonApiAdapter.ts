@@ -47,14 +47,20 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         // Create base adapter
         if (options && options.adapter) {
             this.adapter = <JSData.DSHttpAdapterExtended>(options.adapter);
+
+            //Apply Any new Http Defaults, these will override any existing defaults
+             this.DSUtils.deepMixIn(this.defaults, options);
         } else {
             var httpAdapter: typeof DSHttpAdapter = JSDataHttp;
             this.adapter = <JSData.DSHttpAdapterExtended>(new httpAdapter(options));
         }
 
-        // Apply defaults
+
+        // Apply jsonApi defaults
         this.defaults.jsonApi = options.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
-        this.DSUtils.fillIn(this.defaults.jsonApi, { usePATCH: true, updateRelationships: false });
+        this.DSUtils.deepMixIn(this.defaults.jsonApi, { usePATCH: true, updateRelationships: false });
+        this.DSUtils.deepMixIn(this.defaults.jsonApi, options.jsonApi);
+
 
         // Override default get path implementation
         this.adapterGetPath = this.adapter.getPath;
