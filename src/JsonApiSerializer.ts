@@ -1457,27 +1457,57 @@ export class JsonApiHelper {
                             );
 
                             if (relatedLink) {
-                                var options: JsonApiAdapter.DSJsonApiAdapterOptions = <any>optionsOrig;
+                                var options: JsonApiAdapter.DSJsonApiAdapterOptions = DSUTILS.copy<JsonApiAdapter.DSJsonApiAdapterOptions>(<any>optionsOrig);
+                                //var options: JsonApiAdapter.DSJsonApiAdapterOptions = <any>optionsOrig;
+
                                 options.jsonApi = options.jsonApi || <JsonApiAdapter.DSJsonApiOptions>{};
                                 options.jsonApi.jsonApiPath = options.jsonApi.jsonApiPath || relatedLink.url;
+                                options.bypassCache = options.bypassCache || true;
+
+                                var parentId = DSUTILS.resolveId(Resource, instance);
+
+                                // Set the parents foreign key on the children, this is required when the child has no relationship back to the parent.
+                                // E.g. there is no localKey defined on the child!!
+                                var childResourceDef = <JSData.DSResourceDefinition<any>>Resource.getResource(relationDef.relation);
+                                return childResourceDef.findAll({}, <any>options).then((data: any) => {
+                                    data = DSUTILS.isArray(data) ? data : [data];
+
+                                    if (relationDef.localKey) {
+                                        instance[relationDef.localKey] = DSUTILS.resolveId(childResourceDef, data[0]);
+                                    } else if (relationDef.localKeys) {
+                                        var localKeys = [];
+                                        DSUTILS.forEach(data, (item: any) => {
+                                            localKeys.push(DSUTILS.resolveId(childResourceDef, item));
+                                        });
+
+                                        // Local keys stored on parent, replace them
+                                        instance[relationDef.localKeys] = localKeys;
+                                    } else if (relationDef.foreignKey) {
+                                        // set foreign key on child
+                                        DSUTILS.forEach(data, (item: any) => {
+                                            item[relationDef.foreignKey] = parentId;
+                                        });
+                                    } else {
+                                        // TODO : foreighnKeys ??
+                                        throw Error('Loaf Relations with ForeignKeys, NOT IMPLEMENTED');
+                                    }
+                                });
                             }
+
+                        } else {
+                            return Promise.reject('Failed to load Relationship, no meta data');
                         }
 
-                        var tmp = { target: relationDef, func: relationDef.load };
-                        relationDef.load = undefined;
+                        //if (!relationDef || relationDef.localField) {
+                            throw new Error(
+                                'Failed to load Relationship, relationship does not exist.' +
+                                'Check you call to loadRelations or that your resource configuration matches your jsonApi data')
+                            ;
+                        //}
+                    };
 
-                        return Resource.loadRelations(<any>instance, relationDef.localField, optionsOrig)
-                            .then( () => {
-                                // Restore load function on success
-                                tmp.target.load = tmp.func;
-                            }, () => {
-                                // Restore load function on error
-                                tmp.target.load = tmp.func;
-                            });
-
-                    }; //end load
+                    return true;
                 }
-                return true;
             });
 
 

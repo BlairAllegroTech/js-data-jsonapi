@@ -12,6 +12,7 @@ declare module JsonApiAdapter {
         // Do not set globally, used to override the url for a resource
         // This is set internally using the self link of objects or relationships
         jsonApiPath?: string;
+
     }
 
     export interface DSJsonApiAdapterOptions extends JSData.DSHttpAdapterOptions {
@@ -20,6 +21,7 @@ declare module JsonApiAdapter {
 
         // Js-data send changes only
         changes?: boolean;
+        bypassCache?: boolean;
 
         // DSHTTPSpecific Options
         http?: any;
