@@ -178,7 +178,7 @@
                         assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
                         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-                            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                            .WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
                                 .WithId('1')
                                 .WithLink('self', '/container/1')
                                 .WithRelationship('containedposts',
@@ -368,52 +368,23 @@
     });
 
     describe('**WITHOUT** belongsTo', function () {
-        
+        var ds;
+        var testData = { config: {} };
+
+        beforeEach('set up relationship without "belongsTo" relation', function () {
+            ds = new JSData.DS();
+            var http = new DSHttpAdapter({});
+            var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
+                adapter: http,
+                queryTransform: queryTransform,
+                basePath: 'http://xxx/'
+            });
+
+            ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
+        });
 
         describe('(METHOD#1) loadRelations', function () {
-            var ds;
-            var testData = { config: {} };
-
-            beforeEach('set up relationship without "belongsTo" relation', function () {
-                ds = new JSData.DS();
-                var http = new DSHttpAdapter({});
-                var dsHttpAdapter = new DSJsonApiAdapter.JsonApiAdapter({
-                    adapter: http,
-                    queryTransform: queryTransform,
-                    basePath: 'http://xxx/'
-                });
-
-                ds.registerAdapter('jsonApi', dsHttpAdapter, { default: true });
-
-                //testData.config.userContainer = ds.defineResource({
-                //    name: 'container',
-                //    idAttribute: 'Id',
-                //    relations: {
-                //        // hasMany uses "localField" and "localKeys" or "foreignKey"
-                //        hasMany: {
-                //            posts: {
-                //                localField: 'containedposts',
-                //                foreignKey: 'containerid'
-                //            }
-                //        }
-                //    }
-                //});
-
-
-                //testData.config.Post = ds.defineResource({
-                //    name: 'posts',
-                //    idAttribute: 'Id',
-                //    belongsTo: {
-                //        hasOne: {
-                //            localField: 'Container',
-                //            localKey: 'containerid',
-                //            //parent: true
-                //        }
-                //    }
-
-                //});
-
-            });
+           
 
             it('should make a GET request to load related "oneToMany" data', function () {
                 var _this = this;
@@ -446,7 +417,7 @@
                     assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
                     var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                        .WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
                             .WithId('1')
                             .WithLink('self', '/container/1')
                             .WithRelationship('containedposts',
@@ -461,10 +432,10 @@
                 // Load data
                 return testData.config.userContainer.find(1).then(function (data) {
                     assert.equal(queryTransform.callCount, 1, 'queryTransform should have been called once');
-                    assert.isDefined(data, 'post response recieved');
-                    assert.isDefined(data.length, 'post response is array');
+                    assert.isDefined(data, 'container response recieved');
+                    //assert.isDefined(data.length, 'post response is array');
 
-                    var parent = data[0];
+                    var parent = data;
                     assert.equal(parent.Id, '1', 'post PK 1 should have been found');
                     assert.isDefined(parent[JSONAPIMETATAG].relationships['containedposts'], 'json api relationship for "containedposts", should exist');
                     assert.isDefined(parent[JSONAPIMETATAG].relationships['containedposts']['related'], 'json api relationship for "containedposts", should have related link');
@@ -542,7 +513,7 @@
                     relations: {
                         hasOne: {
                             container: {
-                                localField: 'container',
+                                localField: 'mycontainer',
                                 foreignKey : 'postid'
                             }
                         }
@@ -560,49 +531,49 @@
                     assert.isDefined(request.requestHeaders);
                     assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
-                    var posts = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                    var post = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                         .WithLink('self', '/posts/5')
-                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                        .WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
                             .WithId('5')
                             .WithLink('self', '/posts/5')
                             .WithAttribute('author', 'John')
                             .WithAttribute('age', 30)
-                            .WithRelationship('container',
+                            .WithRelationship('mycontainer',
                                 new DSJsonApiAdapter.JsonApi.JsonApiRelationship(false)
-                                .WithLink('related', '/posts/5/container')
+                                    .WithLink('related', '/posts/5/mycontainer')
                             )
                         );
 
-                    request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(posts));
+                    request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(post));
                 }, 30);
 
                 // Load post
                 return testData.config.Post.find(5).then(function (data) {
-                    assert.isUndefined(data.container, 'should NOT have populated container relationship');
+                    assert.isUndefined(data.mycontainer, 'should NOT have populated container relationship');
 
                     setTimeout(function () {
                         assert.equal(2, _this.requests.length, "Second Call");
                         var request = _this.requests[_this.requests.length - 1];
 
-                        assert.equal(request.url, 'http://xxx/posts/5/container');
+                        assert.equal(request.url, 'http://xxx/posts/5/mycontainer');
                         assert.equal(request.method, 'GET');
                         assert.isDefined(request.requestHeaders);
                         assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
                         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-                            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                            .WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
                                 .WithId('1')
-                                .WithLink('self', '/posts/5/container/1')
-                                .WithAttribute('name', 'myContainer')
+                                .WithLink('self', '/posts/5/mycontainer/1')
+                                .WithAttribute('name', 'This is my container')
                                 );
 
                         request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(container));
                     }, 30);
 
-                    return testData.config.Post.loadRelations(5, ['container'], {}).then(function (data) {
-                        assert.isDefined(data.container, 'should populate container relationship');
-                        assert.equal(data.container.IsJsonApiReference, false, 'should be full object');
-                        assert.equal(data.container.name, 'myContainer', 'should have data');
+                    return testData.config.Post.loadRelations(5, ['mycontainer']).then(function (data) {
+                        assert.isDefined(data.mycontainer, 'should populate container relationship');
+                        assert.equal(data.mycontainer.IsJsonApiReference, false, 'should be full object');
+                        assert.equal(data.mycontainer.name, 'This is my container', 'should have data');
                     });
                 });
             });
@@ -627,7 +598,6 @@
                             }
                         }
                     }
-
                 });
 
                 setTimeout(function () {
@@ -642,7 +612,7 @@
 
                     var posts = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
                         .WithLink('self', '/posts/5')
-                        .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                        .WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
                             .WithId('5')
                             .WithLink('self', '/posts/5')
                             .WithAttribute('author', 'John')
@@ -670,7 +640,7 @@
                         assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
 
                         var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
-                            .WithData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
+                            .WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('container')
                                 .WithId('1')
                                 .WithLink('self', '/posts/5/container/1')
                                 .WithAttribute('name', 'myContainer')
