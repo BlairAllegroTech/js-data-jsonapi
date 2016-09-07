@@ -1464,44 +1464,68 @@ export class JsonApiHelper {
                                 options.jsonApi.jsonApiPath = options.jsonApi.jsonApiPath || relatedLink.url;
                                 options.bypassCache = options.bypassCache || true;
 
-                                var parentId = DSUTILS.resolveId(Resource, instance);
-
                                 // Set the parents foreign key on the children, this is required when the child has no relationship back to the parent.
                                 // E.g. there is no localKey defined on the child!!
                                 var childResourceDef = <JSData.DSResourceDefinition<any>>Resource.getResource(relationDef.relation);
-                                return childResourceDef.findAll({}, <any>options).then((data: any) => {
-                                    data = DSUTILS.isArray(data) ? data : [data];
 
-                                    if (relationDef.localKey) {
-                                        instance[relationDef.localKey] = DSUTILS.resolveId(childResourceDef, data[0]);
-                                    } else if (relationDef.localKeys) {
-                                        var localKeys = [];
-                                        DSUTILS.forEach(data, (item: any) => {
-                                            localKeys.push(DSUTILS.resolveId(childResourceDef, item));
-                                        });
+                                if (relationDef.type === jsDataBelongsTo || relationDef.type === jsDataHasOne) {
+                                    // Find single item
+                                    //var item = DSUTILS.get(instance, relationDef.localField);
+                                    //if (item && !optionsOrig.bypassCache && DSUTILS.get(item, 'isJsonApiReference') === true) {
+                                    //    return Promise.resolve(item);
+                                    //} else {
+                                        return childResourceDef.find('?', <any>options).then((data: any) => {
+                                            if (DSUTILS.isArray(data)) {
+                                                throw new Error('DSJsonApiAdapter, Load Relations expected non array');
+                                            }
 
-                                        // Local keys stored on parent, replace them
-                                        instance[relationDef.localKeys] = localKeys;
-                                    } else if (relationDef.foreignKey) {
-                                        // set foreign key on child
-                                        DSUTILS.forEach(data, (item: any) => {
-                                            item[relationDef.foreignKey] = parentId;
+                                            if (relationDef.localKey) {
+                                                instance[relationDef.localKey] = DSUTILS.resolveId(childResourceDef, data);
+                                            } else if (relationDef.foreignKey) {
+                                                data[relationDef.foreignKey] = DSUTILS.resolveId(childResourceDef, instance);
+                                            } else if (options.error) {
+                                                options.error('DSJsonApiAdapter, load relations, relation does not have a key correctly defined', [relationDef]);
+                                            }
                                         });
-                                    } else {
-                                        // TODO : foreighnKeys ??
-                                        throw Error('Loaf Relations with ForeignKeys, NOT IMPLEMENTED');
+                                    //}
+                                } else {
+                                    return childResourceDef.findAll({}, <any>options).then((data: any) => {
+                                            // Find multiple items
+                                            if (!DSUTILS.isArray(data)) {
+                                                throw new Error('DSJsonApiAdapter, Load Relations expected array');
+                                            }
+
+
+                                            if (relationDef.localKeys) {
+                                                var localKeys = [];
+                                                DSUTILS.forEach(data, (item: any) => {
+                                                    localKeys.push(DSUTILS.resolveId(childResourceDef, item));
+                                                });
+
+                                                // Local keys stored on parent, replace them, as we have just requested the whole relationship
+                                                instance[relationDef.localKeys] = localKeys;
+                                            } else if (relationDef.foreignKey) {
+                                                // Set foreign key on child
+                                                var parentId = DSUTILS.resolveId(Resource, instance);
+
+                                                DSUTILS.forEach(data, (item: any) => {
+                                                    item[relationDef.foreignKey] = parentId;
+                                                });
+                                            } else if (options.error) {
+                                                options.error('DSJsonApiAdapter, load relations, onToMany relation does not have a keys correctly defined', [relationDef]);
+                                            }
+                                        });
                                     }
-                                });
                             }
 
                         } else {
-                            return Promise.reject('Failed to load Relationship, no meta data');
+                            return Promise.reject('DSJsonApiAdapter, Failed to load Relationship, no meta data');
                         }
 
                         //if (!relationDef || relationDef.localField) {
                             throw new Error(
                                 'Failed to load Relationship, relationship does not exist.' +
-                                'Check you call to loadRelations or that your resource configuration matches your jsonApi data')
+                                'Check your call to loadRelations that the relationship name is correct, or that your resource configuration matches your jsonApi data')
                             ;
                         //}
                     };
