@@ -155,7 +155,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
             var jsonApiPath : string = this.DSUtils.get<string>(options, 'jsonApi.jsonApiPath');
             if (jsonApiPath) {
                 // Discard any additional parameters as we have the path recorded from a JsonApi response!
-                (<any>options).params = {};
+                //(<any>options).params = {};
             //} else {
 
             //    if (method === 'findAll') {
@@ -225,7 +225,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
 
     /**
         * @name configureSerializers
-        * @desc Configure serialization and deserialization for the request using 
+        * @desc Configure serialization and deserialization for the request using
         * either axios or $http configuration options
         * @param {object} options axios or $http config options
         * @returns {object} options copy of options with serializers configured for jsonapi
@@ -233,7 +233,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
         */
     configureSerializers(options?: JSData.DSConfiguration, locals?: JsonApiAdapter.DSJsonApiAdapterOptions): JsonApiAdapter.DSJsonApiAdapterOptions {
 
-        // Order for priority 
+        // Order for priority
         // 1) options
         // 2) local overrides
         // 3) defaults
