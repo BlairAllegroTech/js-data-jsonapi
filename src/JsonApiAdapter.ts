@@ -154,8 +154,10 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
 
             var jsonApiPath : string = this.DSUtils.get<string>(options, 'jsonApi.jsonApiPath');
             if (jsonApiPath) {
-                // Discard any additional parameters as we have the path recorded from a JsonApi response!
-                //(<any>options).params = {};
+                // Discard the custom parameter used when loading relations as the cache key
+                if ((<any>options).params.__jsDataJsonapi) {
+                    delete (<any>options).params.__jsDataJsonapi;
+                }
             //} else {
 
             //    if (method === 'findAll') {
