@@ -166,7 +166,7 @@
                 }, 30);
 
 
-                return testData.config.Post.findAll({ containerid: 1 }, { jsonApi: { jsonApiPath: '/container/1/containedposts' } }).then(function (data) {
+                return testData.config.Post.findAll({}, { jsonApi: { jsonApiPath: '/container/1/containedposts' } }).then(function (data) {
 
                     setTimeout(function () {
                         assert.equal(2, _this.requests.length, "Second Call");
@@ -266,7 +266,7 @@
                     assert.equal(link.url, 'http://xxx/container/1/posts');
 
                     // This call has the same effect as the above to load related data
-                    return testData.config.Post.findAll({ containerid: parent.Id }, { bypassCache: true, jsonApi: { jsonApiPath: link.url } }).then(function (data) {
+                    return testData.config.Post.findAll({ }, { bypassCache: true, jsonApi: { jsonApiPath: link.url } }).then(function (data) {
                         assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called 2 times, find and findAll');
 
                         var userContainer = testData.config.userContainer;
