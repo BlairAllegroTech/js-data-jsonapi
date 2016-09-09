@@ -1,6 +1,6 @@
 {
   "name": "js-data-jsonapi",
-  "version": "0.0.0-alpha.18",
+  "version": "0.0.0-alpha.19",
   "description": "JsonApi adapter for js-data.",
   "main": "./dist/js-data-jsonapi.js",
   "repository": {

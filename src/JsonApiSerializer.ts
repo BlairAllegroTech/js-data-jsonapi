@@ -1600,7 +1600,7 @@ export class JsonApiHelper {
                                     var childResource = parentResourceType.getResource(relation.relation);
 
                                     var params = { };
-                                    params[relation.foreignKey] = this.Id;
+                                    //params[relation.foreignKey] = this.Id;
 
                                     var operationConfig: any = {
                                         bypassCache: true,
