@@ -1374,7 +1374,7 @@ export class JsonApiHelper {
         // e.g. api/Parent/1/Childrelation
         //Here 'Parent' should be the data.type of the parent, follows by its id, then the child relationship
 
-        //Here: 
+        //Here:
         // - Parent is the name of the parent type , follows by the id.
         // - ChildRelation - is the localField/relationName on the parent
 
@@ -1389,7 +1389,7 @@ export class JsonApiHelper {
             options.enumerateAllParentRelations((rel: JSData.RelationDefinition) => {
 
                 // If we find a parent/belongsTo relationship with the same type as the parent then use it.
-                // There should only ever be one parent relationship of a given type. 
+                // There should only ever be one parent relationship of a given type.
                 var parentResourceIndex = selfLinkArray.lastIndexOf(rel.relation);
                 if (parentResourceIndex >= 0 && rel.localKey) {
                     //We found a match
@@ -1474,7 +1474,9 @@ export class JsonApiHelper {
                                     //if (item && !optionsOrig.bypassCache && DSUTILS.get(item, 'isJsonApiReference') === true) {
                                     //    return Promise.resolve(item);
                                     //} else {
-                                        return childResourceDef.find('?', <any>options).then((data: any) => {
+                                        // js-data#fine uses the id passed to find as a cache key, so we need a unique key for each request.
+                                        var relationId = options.jsonApi.jsonApiPath;
+                                        return childResourceDef.find(relationId, <any>options).then((data: any) => {
                                             if (DSUTILS.isArray(data)) {
                                                 throw new Error('DSJsonApiAdapter, Load Relations expected non array');
                                             }
@@ -1489,7 +1491,9 @@ export class JsonApiHelper {
                                         });
                                     //}
                                 } else {
-                                    return childResourceDef.findAll({}, <any>options).then((data: any) => {
+                                    // js-data#findAll uses the params passed to it as a cache key, so we need a unique key for each request.
+                                    var relationParam = {__jsDataJsonapi: options.jsonApi.jsonApiPath};
+                                    return childResourceDef.findAll(relationParam, <any>options).then((data: any) => {
                                             // Find multiple items
                                             if (!DSUTILS.isArray(data)) {
                                                 throw new Error('DSJsonApiAdapter, Load Relations expected array');
