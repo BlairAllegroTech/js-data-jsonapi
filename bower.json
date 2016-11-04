@@ -11,7 +11,7 @@
     "name": "Blair Jacobs"
   },
   "license": "MIT",
-  
+
   "ignore": [
     ".idea/",
     ".*",
@@ -32,7 +32,9 @@
     "tsconfig.json",
     "tslint.json",
     "karma.conf.js",
-    "karma.start.js"
+    "karma.start.js",
+    "JSONApiDataAdapter.njsproj",
+    "JSONApiDataAdapter.sln"
   ],
   "dependencies": {
    "js-data": "^2.8.2 <3",
