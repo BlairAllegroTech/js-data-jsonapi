@@ -195,7 +195,7 @@ export class JsonApiAdapter implements JSData.IDSAdapter {
                 } else {
                     //|| method === 'destroy' || method === 'save' || method === 'find'
                     // Only existing objects should have meta data, for find this could be a model reference
-                    if (method === 'update' ) {
+                    if (method === 'update' || method === 'destroy') {
                         //TODO : for updates use self link!!
                         var metaData = Helper.MetaData.TryGetMetaData(item);
                         if (metaData && metaData.selfLink) {
