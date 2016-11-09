@@ -213,11 +213,10 @@ ModelManifest.xml
 
 /js-data-jsonapi-0.0.0-alpha.1.tgz
 /src/*.js
-*.map
+/src/*.map
 /ts-built
 
 /junit
-/dist
 /coverage
 /bower_components
 /karma_html
