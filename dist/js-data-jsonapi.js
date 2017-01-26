@@ -683,7 +683,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    JsonApiHelper.DeSerialize = function (options, response) {
 	        var _this = this;
 	        if (response.data === null) {
-	            return new DeSerializeResult([], null);
+	            return new DeSerializeResult(null, null);
 	        }
 	        if (DSUTILS.isArray(response.data)) {
 	            if (response.data.length === 0) {
