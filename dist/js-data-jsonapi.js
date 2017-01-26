@@ -159,7 +159,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 	            else {
-	                if (method === 'update') {
+	                if (method === 'update' || method === 'destroy') {
 	                    var metaData = Helper.MetaData.TryGetMetaData(item);
 	                    if (metaData && metaData.selfLink) {
 	                        jsonApiPath = metaData.selfLink;
@@ -549,18 +549,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    SerializationOptions.prototype.getChildRelations = function (relationType) {
 	        relationType = relationType.toLowerCase();
 	        if (this.resourceDef.relations) {
+	            var matches_1 = [];
 	            if (this.resourceDef.relations.hasOne) {
 	                if (this.resourceDef.relations.hasOne[relationType]) {
-	                    return this.resourceDef.relations.hasOne[relationType];
+	                    matches_1 = matches_1.concat(this.resourceDef.relations.hasOne[relationType]);
 	                }
 	            }
 	            if (this.resourceDef.relations.hasMany) {
 	                if (this.resourceDef.relations.hasMany[relationType]) {
-	                    return this.resourceDef.relations.hasMany[relationType];
+	                    matches_1 = matches_1.concat(this.resourceDef.relations.hasMany[relationType]);
 	                }
 	            }
+	            if (matches_1.length) {
+	                return matches_1;
+	            }
 	            var relationlower_1 = relationType.toLowerCase();
-	            var matches_1 = [];
 	            var relationList = this.resourceDef.relationList;
 	            DSUTILS.forEach(relationList, function (relation) {
 	                if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
@@ -683,7 +686,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    JsonApiHelper.DeSerialize = function (options, response) {
 	        var _this = this;
 	        if (response.data === null) {
-	            return new DeSerializeResult([], null);
+	            return new DeSerializeResult(null, null);
 	        }
 	        if (DSUTILS.isArray(response.data)) {
 	            if (response.data.length === 0) {
@@ -1280,7 +1283,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                        else {
 	                            return Promise.reject('DSJsonApiAdapter, Failed to load Relationship, no meta data');
 	                        }
-	                        throw new Error('Failed to load Relationship, relationship does not exist.' +
+	                        throw new Error('Failed to load Relationship, relationship does not exist. ' +
 	                            'Check your call to loadRelations that the relationship name is correct, or that your resource configuration matches your jsonApi data');
 	                    };
 	                    return true;

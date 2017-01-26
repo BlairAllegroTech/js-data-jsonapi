@@ -313,21 +313,25 @@ export class SerializationOptions {
         relationType = relationType.toLowerCase();
 
         if (this.resourceDef.relations) {
+            let matches: Array<JSData.RelationDefinition> = [];
 
             if (this.resourceDef.relations.hasOne) {
                 if (this.resourceDef.relations.hasOne[relationType]) {
-                    return this.resourceDef.relations.hasOne[relationType];
+                    matches = matches.concat(this.resourceDef.relations.hasOne[relationType]);
                 }
             }
 
             if (this.resourceDef.relations.hasMany) {
                 if (this.resourceDef.relations.hasMany[relationType]) {
-                    return this.resourceDef.relations.hasMany[relationType];
+                    matches = matches.concat(this.resourceDef.relations.hasMany[relationType]);
                 }
             }
 
+            if (matches.length) {
+                return matches;
+            }
+
             let relationlower = relationType.toLowerCase();
-            let matches: Array<JSData.RelationDefinition> = [];
             let relationList = this.resourceDef.relationList;
 
             DSUTILS.forEach<JSData.RelationDefinition>(relationList, (relation: JSData.RelationDefinition) => {
@@ -548,7 +552,7 @@ export class JsonApiHelper {
     public static DeSerialize(options: SerializationOptions, response: JsonApi.JsonApiRequest): DeSerializeResult {
 
         if (response.data === null) {
-            return new DeSerializeResult([], null);
+            return new DeSerializeResult(null, null);
         }
 
         if (DSUTILS.isArray(response.data)) {
@@ -1072,7 +1076,7 @@ export class JsonApiHelper {
 
                 var relationshipDef = options.getRelationByLocalField(relationName);
                 if (relationshipDef) {
-                    // We are only interestedin child relationships
+                    // We are only interested in child relationships
                     // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
                     if (relationshipDef.type === jsDataHasMany || relationshipDef.type === jsDataHasOne) {
                         metaData.WithRelationshipLink(
@@ -1528,7 +1532,7 @@ export class JsonApiHelper {
 
                         //if (!relationDef || relationDef.localField) {
                             throw new Error(
-                                'Failed to load Relationship, relationship does not exist.' +
+                                'Failed to load Relationship, relationship does not exist. ' +
                                 'Check your call to loadRelations that the relationship name is correct, or that your resource configuration matches your jsonApi data')
                             ;
                         //}
