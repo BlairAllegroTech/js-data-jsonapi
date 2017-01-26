@@ -115,12 +115,12 @@
 
                     // I believe the line below and the subsequent call to Post.findAll are equivelent
                     // However the call below to "loadRelations" is more meaning full in terms of what we are trying to do.
-                    // The problem is that js-data is being too smart, we want the parameters passed!! 
+                    // The problem is that js-data is being too smart, we want the parameters passed!!
                     // e.g.The parent / parentId and the parent relation to load.
                     // However what ends up at the adapter is infomation about the children that would be returned
-                    // which means we have to jump through hoops to try to get back this original innformation when 
+                    // which means we have to jump through hoops to try to get back this original innformation when
                     // eventually findAll is called on the data adabter!!
-                    // Please review, see  JsonApiAdapter.getPath code inside of if (method === 'findAll') where i am trying to get the 
+                    // Please review, see  JsonApiAdapter.getPath code inside of if (method === 'findAll') where i am trying to get the
                     // parent and the relationship info!!!!
                     return testData.config.userContainer.loadRelations(1, ['containedposts']).then(function (data) {
                         assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
@@ -384,7 +384,7 @@
         });
 
         describe('(METHOD#1) loadRelations', function () {
-           
+
 
             it('should make a GET request to load related "oneToMany" data', function () {
                 var _this = this;
@@ -473,12 +473,12 @@
 
                     // I believe the line below and the subsequent call to Post.findAll are equivelent
                     // However the call below to "loadRelations" is more meaning full in terms of what we are trying to do.
-                    // The problem is that js-data is being too smart, we want the parameters passed!! 
+                    // The problem is that js-data is being too smart, we want the parameters passed!!
                     // e.g.The parent / parentId and the parent relation to load.
                     // However what ends up at the adapter is infomation about the children that would be returned
-                    // which means we have to jump through hoops to try to get back this original innformation when 
+                    // which means we have to jump through hoops to try to get back this original innformation when
                     // eventually findAll is called on the data adabter!!
-                    // Please review, see  JsonApiAdapter.getPath code inside of if (method === 'findAll') where i am trying to get the 
+                    // Please review, see  JsonApiAdapter.getPath code inside of if (method === 'findAll') where i am trying to get the
                     // parent and the relationship info!!!!
                     return testData.config.userContainer.loadRelations(1, ['containedposts']).then(function (data) {
                         assert.equal(queryTransform.callCount, 2, 'queryTransform should have been called twice');
@@ -524,7 +524,6 @@
                 setTimeout(function () {
                     assert.equal(1, _this.requests.length, "First Call");
                     var request = _this.requests[_this.requests.length - 1];
-
 
                     assert.equal(request.url, 'http://xxx/posts/5');
                     assert.equal(request.method, 'GET');
@@ -604,7 +603,6 @@
                     assert.equal(1, _this.requests.length, "First Call");
                     var request = _this.requests[_this.requests.length - 1];
 
-
                     assert.equal(request.url, 'http://xxx/posts/5');
                     assert.equal(request.method, 'GET');
                     assert.isDefined(request.requestHeaders);
@@ -653,6 +651,77 @@
                         assert.isDefined(data.container, 'should populate container relationship');
                         assert.equal(data.container.IsJsonApiReference, false, 'should be full object');
                         assert.equal(data.container.name, 'myContainer', 'should have data');
+                    });
+                });
+            });
+
+            it('should make a GET request to load related "hasOne" relation null data', function () {
+                var _this = this;
+
+                testData.config.userContainer = ds.defineResource({
+                    name: 'container',
+                    idAttribute: 'Id',
+                });
+
+
+                testData.config.Post = ds.defineResource({
+                    name: 'posts',
+                    idAttribute: 'Id',
+                    relations: {
+                        hasOne: {
+                            container: {
+                                localField: 'container',
+                                localKey: 'containerid',
+                            }
+                        }
+                    }
+                });
+
+                setTimeout(function () {
+                    assert.equal(1, _this.requests.length, "First Call");
+                    var request = _this.requests[_this.requests.length - 1];
+
+                    assert.equal(request.url, 'http://xxx/posts/5');
+                    assert.equal(request.method, 'GET');
+                    assert.isDefined(request.requestHeaders);
+                    assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+                    var posts = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                        .WithLink('self', '/posts/5')
+                        .WithSingleData(new DSJsonApiAdapter.JsonApi.JsonApiData('posts')
+                            .WithId('5')
+                            .WithLink('self', '/posts/5')
+                            .WithAttribute('author', 'John')
+                            .WithAttribute('age', 30)
+                            .WithRelationship('container',
+                            new DSJsonApiAdapter.JsonApi.JsonApiRelationship(false)
+                                .WithLink('related', '/posts/5/container')
+                            )
+                        );
+
+                    request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(posts));
+                }, 30);
+
+                // Load post
+                return testData.config.Post.find(5).then(function (data) {
+                    assert.isUndefined(data.container, 'should NOT have populated container relationship');
+
+                    setTimeout(function () {
+                        assert.equal(2, _this.requests.length, "Second Call");
+                        var request = _this.requests[_this.requests.length - 1];
+
+                        assert.equal(request.url, 'http://xxx/posts/5/container');
+                        assert.equal(request.method, 'GET');
+                        assert.isDefined(request.requestHeaders);
+                        assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+                        var container = new DSJsonApiAdapter.JsonApi.JsonApiRequest()
+                            .WithSingleData(null);
+                        request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(container));
+                    }, 30);
+
+                    return testData.config.Post.loadRelations(5, ['container'], {}).then(function (data) {
+                        assert.equal(data.container, null, 'should not have data');
                     });
                 });
             });

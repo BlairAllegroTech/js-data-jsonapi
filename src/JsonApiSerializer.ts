@@ -548,7 +548,7 @@ export class JsonApiHelper {
     public static DeSerialize(options: SerializationOptions, response: JsonApi.JsonApiRequest): DeSerializeResult {
 
         if (response.data === null) {
-            return new DeSerializeResult(null, null);
+            return new DeSerializeResult([], null);
         }
 
         if (DSUTILS.isArray(response.data)) {
@@ -1478,7 +1478,11 @@ export class JsonApiHelper {
                                         var relationId = options.jsonApi.jsonApiPath;
                                         return childResourceDef.find(relationId, <any>options).then((data: any) => {
                                             if (DSUTILS.isArray(data)) {
-                                                throw new Error('DSJsonApiAdapter, Load Relations expected non array');
+                                                if (data.length > 1) {
+                                                    throw new Error('DSJsonApiAdapter, Load Relations expected non array');
+                                                } else {
+                                                    data = null;
+                                                }
                                             }
 
                                             if (relationDef.localKey) {
