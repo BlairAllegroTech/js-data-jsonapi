@@ -683,7 +683,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    JsonApiHelper.DeSerialize = function (options, response) {
 	        var _this = this;
 	        if (response.data === null) {
-	            return new DeSerializeResult(null, null);
+	            return new DeSerializeResult([], null);
 	        }
 	        if (DSUTILS.isArray(response.data)) {
 	            if (response.data.length === 0) {
@@ -1238,7 +1238,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    var relationId = options.jsonApi.jsonApiPath;
 	                                    return childResourceDef.find(relationId, options).then(function (data) {
 	                                        if (DSUTILS.isArray(data)) {
-	                                            throw new Error('DSJsonApiAdapter, Load Relations expected non array');
+	                                            if (data.length > 1) {
+	                                                throw new Error('DSJsonApiAdapter, Load Relations expected non array');
+	                                            }
+	                                            else {
+	                                                data = null;
+	                                            }
 	                                        }
 	                                        if (relationDef.localKey) {
 	                                            instance[relationDef.localKey] = DSUTILS.resolveId(childResourceDef, data);
