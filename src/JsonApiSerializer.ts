@@ -552,7 +552,7 @@ export class JsonApiHelper {
     public static DeSerialize(options: SerializationOptions, response: JsonApi.JsonApiRequest): DeSerializeResult {
 
         if (response.data === null) {
-            return new DeSerializeResult([], null);
+            return new DeSerializeResult(null, null);
         }
 
         if (DSUTILS.isArray(response.data)) {
