@@ -671,6 +671,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        var result = new JsonApi.JsonApiRequest();
 	        if (DSUTILS.isArray(attrs)) {
+	            result.data = new Array();
 	            DSUTILS.forEach(attrs, function (item) {
 	                result.WithData(_this.ObjectToJsonApiData(options, item, config));
 	            });
