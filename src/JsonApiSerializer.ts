@@ -533,6 +533,7 @@ export class JsonApiHelper {
     public static Serialize(options: SerializationOptions, attrs: any, config: JsonApiAdapter.DSJsonApiAdapterOptions): JsonApi.JsonApiRequest {
         var result = new JsonApi.JsonApiRequest();
         if (DSUTILS.isArray(attrs)) {
+            result.data = new Array<JsonApi.JsonApiData>();
             //Add Data as array
             DSUTILS.forEach(attrs, (item: Object) => {
                 result.WithData(this.ObjectToJsonApiData(options, item, config));
