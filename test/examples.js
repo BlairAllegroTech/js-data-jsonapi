@@ -43,6 +43,10 @@
                 assert.isDefined(example.config.author.get(9), 'Expect author#9 to exist');
 
                 assert.isDefined(data[0][JSONAPIMETATAG].relationships.author, 'json api relationship for one "author", should exist');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.author.related, 'json api relationship for "author", should have related link');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.author.related.url, 'json api relationship for "author" related, should have url');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.author.self, 'json api relationship for "author", should have self link');
+                assert.isDefined(data[0][JSONAPIMETATAG].relationships.author.self.url, 'json api relationship for "author" self, should have url');
                 assert.isDefined(data[0][JSONAPIMETATAG].relationships.comments, 'json api relationship for many "comments", should exist');
                 assert.isDefined(data[0][JSONAPIMETATAG].relationships.image, 'json api relationship for one "image", should exist');
                 assert.isDefined(data[0][JSONAPIMETATAG].relationships.tags, 'json api relationship for many "tags", should exist');
