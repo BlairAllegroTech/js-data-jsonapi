@@ -40,7 +40,7 @@
     "gzip": "echo gzipped size: $(cat dist/js-data-jsonapi.min.js | gzip -f9 | wc -c)kb",
     "linter": "npm run tslint",
     "build": "npm run tslint && npm run compile && npm run bundle && npm run min && npm run version && npm run banner",
-    "karma": "karma start",
+    "karma": "karma start --single-run",
     "test": "npm run build && npm run karma",
     "ci": "npm test && cat ./coverage/PhantomJS*/lcov.info | coveralls || true"
   },
@@ -77,6 +77,5 @@
     "tslint": "=3.2.1",
     "tslint-microsoft-contrib": "^1.0.0",
     "typescript": "^1.7.5"
-    
   }
 }
