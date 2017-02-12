@@ -14,7 +14,7 @@ const jsonApiContentType: string = 'application/vnd.api+json';
 export const JSONAPI_RELATED_LINK: string = 'related';
 export const JSONAPI_PARENT_LINK: string = 'parent';
 
-const jsDataBelongsTo : string = 'belongsTo';
+const jsDataBelongsTo: string = 'belongsTo';
 const jsDataHasMany: string = 'hasMany';
 const jsDataHasOne: string = 'hasOne';
 
@@ -223,22 +223,22 @@ export class SerializationOptions {
         return (relation && relation[0]) ? relation[0] : null;
     }
 
-     /**
-     * @name getChildRelationWithLocalField
-     * @desc Given the relationType, find relationship by localFielName name
-     * @param relationType The type the relationship represents
-     * @param localFieldName The local field name for the relationship, incase there is more than one relationship on the object of the given type
-        */
+    /**
+    * @name getChildRelationWithLocalField
+    * @desc Given the relationType, find relationship by localFielName name
+    * @param relationType The type the relationship represents
+    * @param localFieldName The local field name for the relationship, incase there is more than one relationship on the object of the given type
+       */
     getChildRelationWithLocalField(relationType: string, localFieldName: string): JSData.RelationDefinition {
 
-        relationType = relationType.toLowerCase();
-        localFieldName = localFieldName.toLowerCase();
+        //relationType = relationType.toLowerCase();
+        var localFieldNameLower = localFieldName.toLowerCase();
 
         let relations = this.getChildRelations(relationType);
 
         var match: JSData.RelationDefinition = null;
         DSUTILS.forEach(relations, (relation: JSData.RelationDefinition) => {
-            if (relation.localField === localFieldName) {
+            if (relation.localField === localFieldName || relation.localField === localFieldNameLower) {
                 match = relation;
 
                 // Exit the for loop
@@ -255,14 +255,14 @@ export class SerializationOptions {
      * @param foreignKeyName Theforeign key name for the relationship, incase there is more than one relationship on the object of the given type
      */
     getChildRelationWithForeignKey(relationType: string, foreignKeyName: string): JSData.RelationDefinition {
-        relationType = relationType.toLowerCase();
-        foreignKeyName = foreignKeyName.toLowerCase();
+        //relationType = relationType.toLowerCase();
+        var foreignKeyNameLower = foreignKeyName.toLowerCase();
 
         let relations = this.getChildRelations(relationType);
 
         var match: JSData.RelationDefinition = null;
         DSUTILS.forEach(relations, (relation: JSData.RelationDefinition) => {
-            if (relation.foreignKey === foreignKeyName) {
+            if (relation.foreignKey === foreignKeyName || relation.foreignKey === foreignKeyNameLower) {
                 match = relation;
                 return false;
             }
@@ -303,28 +303,17 @@ export class SerializationOptions {
      */
     enumerateRelations(callback: (relation: JSData.RelationDefinition, index?: number, source?: Object) => boolean): void {
         DSUTILS.forEach(this.resourceDef.relationList, (relation: JSData.RelationDefinition, index?: number, source?: Object) => {
-                return callback(relation, index, source);
+            return callback(relation, index, source);
         });
     }
 
 
     //Find relationship by relationship name
     private getChildRelations(relationType: string): Array<JSData.RelationDefinition> {
-        relationType = relationType.toLowerCase();
+        //relationType = relationType.toLowerCase();
 
         if (this.resourceDef.relations) {
 
-            if (this.resourceDef.relations.hasOne) {
-                if (this.resourceDef.relations.hasOne[relationType]) {
-                    return this.resourceDef.relations.hasOne[relationType];
-                }
-            }
-
-            if (this.resourceDef.relations.hasMany) {
-                if (this.resourceDef.relations.hasMany[relationType]) {
-                    return this.resourceDef.relations.hasMany[relationType];
-                }
-            }
 
             let relationlower = relationType.toLowerCase();
             let matches: Array<JSData.RelationDefinition> = [];
@@ -332,12 +321,16 @@ export class SerializationOptions {
 
             DSUTILS.forEach<JSData.RelationDefinition>(relationList, (relation: JSData.RelationDefinition) => {
                 if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
-                    if (relationlower === relation.relation) {
+                    if (relationType === relation.relation) {
                         matches.push(relation);
+                    } else {
+                        if (relationlower === relation.relation) {
+                            matches.push(relation);
+                            LogInfo('Relation Case Insensitive match made of ' + relationType, matches);
+                        }
                     }
                 }
             });
-            LogInfo('Relation Case Insensitive match made of ' + relationType, matches);
             return matches;
         }
 
@@ -412,7 +405,7 @@ export class SerializationOptions {
 
         var match: JSData.RelationDefinition = null;
         DSUTILS.forEach(relationList, (relation: JSData.RelationDefinition) => {
-            if (relation.localField === relationlower) {
+            if (relation.localField === relationName || relation.localField === relationlower) {
                 match = relation;
                 return false;
             }
@@ -1392,6 +1385,7 @@ export class JsonApiHelper {
                 // If we find a parent/belongsTo relationship with the same type as the parent then use it.
                 // There should only ever be one parent relationship of a given type.
                 var parentResourceIndex = selfLinkArray.lastIndexOf(rel.relation);
+
                 if (parentResourceIndex >= 0 && rel.localKey) {
                     //We found a match
                     fields[rel.localKey] = selfLinkArray[parentResourceIndex + 1]; // Set Parent Id
@@ -1475,56 +1469,56 @@ export class JsonApiHelper {
                                     //if (item && !optionsOrig.bypassCache && DSUTILS.get(item, 'isJsonApiReference') === true) {
                                     //    return Promise.resolve(item);
                                     //} else {
-                                        // js-data#fine uses the id passed to find as a cache key, so we need a unique key for each request.
-                                        var relationId = options.jsonApi.jsonApiPath;
-                                        return childResourceDef.find(relationId, <any>options).then((data: any) => {
-                                            if (DSUTILS.isArray(data)) {
-                                                if (data.length > 1) {
-                                                    throw new Error('DSJsonApiAdapter, Load Relations expected non array');
-                                                } else {
-                                                    data = null;
-                                                }
+                                    // js-data#fine uses the id passed to find as a cache key, so we need a unique key for each request.
+                                    var relationId = options.jsonApi.jsonApiPath;
+                                    return childResourceDef.find(relationId, <any>options).then((data: any) => {
+                                        if (DSUTILS.isArray(data)) {
+                                            if (data.length > 1) {
+                                                throw new Error('DSJsonApiAdapter, Load Relations expected non array');
+                                            } else {
+                                                data = null;
                                             }
+                                        }
 
-                                            if (relationDef.localKey) {
-                                                instance[relationDef.localKey] = DSUTILS.resolveId(childResourceDef, data);
-                                            } else if (relationDef.foreignKey) {
-                                                data[relationDef.foreignKey] = DSUTILS.resolveId(childResourceDef, instance);
-                                            } else if (options.error) {
-                                                options.error('DSJsonApiAdapter, load relations, relation does not have a key correctly defined', [relationDef]);
-                                            }
-                                        });
+                                        if (relationDef.localKey) {
+                                            instance[relationDef.localKey] = DSUTILS.resolveId(childResourceDef, data);
+                                        } else if (relationDef.foreignKey) {
+                                            data[relationDef.foreignKey] = DSUTILS.resolveId(childResourceDef, instance);
+                                        } else if (options.error) {
+                                            options.error('DSJsonApiAdapter, load relations, relation does not have a key correctly defined', [relationDef]);
+                                        }
+                                    });
                                     //}
                                 } else {
                                     // js-data#findAll uses the params passed to it as a cache key, so we need a unique key for each request.
                                     var relationParam = {__jsDataJsonapi: options.jsonApi.jsonApiPath};
                                     return childResourceDef.findAll(relationParam, <any>options).then((data: any) => {
-                                            // Find multiple items
-                                            if (!DSUTILS.isArray(data)) {
-                                                throw new Error('DSJsonApiAdapter, Load Relations expected array');
-                                            }
+                                        // Find multiple items
+                                        if (!DSUTILS.isArray(data)) {
+                                            throw new Error('DSJsonApiAdapter, Load Relations expected array');
+                                        }
 
 
-                                            if (relationDef.localKeys) {
-                                                var localKeys = [];
-                                                DSUTILS.forEach(data, (item: any) => {
-                                                    localKeys.push(DSUTILS.resolveId(childResourceDef, item));
-                                                });
+                                        if (relationDef.localKeys) {
+                                            var localKeys = [];
+                                            DSUTILS.forEach(data, (item: any) => {
+                                                localKeys.push(DSUTILS.resolveId(childResourceDef, item));
+                                            });
 
-                                                // Local keys stored on parent, replace them, as we have just requested the whole relationship
-                                                instance[relationDef.localKeys] = localKeys;
-                                            } else if (relationDef.foreignKey) {
-                                                // Set foreign key on child
-                                                var parentId = DSUTILS.resolveId(Resource, instance);
+                                            // Local keys stored on parent, replace them, as we have just requested the whole relationship
+                                            instance[relationDef.localKeys] = localKeys;
+                                        } else if (relationDef.foreignKey) {
+                                            // Set foreign key on child
+                                            var parentId = DSUTILS.resolveId(Resource, instance);
 
-                                                DSUTILS.forEach(data, (item: any) => {
-                                                    item[relationDef.foreignKey] = parentId;
-                                                });
-                                            } else if (options.error) {
-                                                options.error('DSJsonApiAdapter, load relations, onToMany relation does not have a keys correctly defined', [relationDef]);
-                                            }
-                                        });
-                                    }
+                                            DSUTILS.forEach(data, (item: any) => {
+                                                item[relationDef.foreignKey] = parentId;
+                                            });
+                                        } else if (options.error) {
+                                            options.error('DSJsonApiAdapter, load relations, onToMany relation does not have a keys correctly defined', [relationDef]);
+                                        }
+                                    });
+                                }
                             }
 
                         } else {
@@ -1532,10 +1526,10 @@ export class JsonApiHelper {
                         }
 
                         //if (!relationDef || relationDef.localField) {
-                            throw new Error(
-                                'Failed to load Relationship, relationship does not exist.' +
-                                'Check your call to loadRelations that the relationship name is correct, or that your resource configuration matches your jsonApi data')
-                            ;
+                        throw new Error(
+                            'Failed to load Relationship, relationship does not exist.' +
+                            'Check your call to loadRelations that the relationship name is correct, or that your resource configuration matches your jsonApi data')
+                        ;
                         //}
                     };
 
@@ -1618,7 +1612,7 @@ export class JsonApiHelper {
 
                                     // Resolves promise async
                                     //if (DSUTILS.isArray(this[relationName])) {
-                                        return (<JSData.DSResourceDefinition<any>>childResource.def()).findAll(params, operationConfig);
+                                    return (<JSData.DSResourceDefinition<any>>childResource.def()).findAll(params, operationConfig);
                                     //} else {
                                     //    // We may not know the id? just the url
                                     //    return (<JSData.DSResourceDefinition<any>>childResource.def()).find(0, operationConfig);

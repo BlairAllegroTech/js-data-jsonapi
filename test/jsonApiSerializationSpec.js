@@ -705,4 +705,110 @@
             });
         });
     });
+
+    describe('Relationships Identified correctly when types contain mixed case and/or no standard java names', function () {
+        var ds;
+        var test = { config: {} };
+
+        beforeEach(function () {
+            ds = new JSData.DS();
+
+            var dsJsonApiAdapter = new DSJsonApiAdapter.JsonApiAdapter({queryTransform: queryTransform});
+            ds.registerAdapter('jsonApi', dsJsonApiAdapter, { default: true });
+
+            test.config.CourseCategoryResource = datastore.defineResource({
+                name: 'Course-Category',
+                relations: {
+                    hasMany: {
+                        'Course-Competency': {
+                            foreignKey: 'categoryId',
+                            localField: 'competencies'
+                        }
+                    }
+                }
+            })
+
+            test.config.CourseCompetencyResource = datastore.defineResource({
+                name: 'Course-Competency',
+                relations: {
+                    belongsTo: {
+                        'Course-Category': {
+                            localField: 'category',
+                            localKey: 'categoryId'
+                            //parent: true
+                        }
+                    }
+                }
+            })
+        });
+
+        it('Should identify and load types that contain nonstandard java characters', function () {
+            var _this = this;
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length, "First Call");
+                var request = _this.requests[_this.requests.length - 1];
+
+                assert.equal(request.method, 'GET');
+                assert.isDefined(request.requestHeaders, 'Request Contains headers');
+                assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Should contains json api accept required header');
+
+                var responseData = {
+                    data: [
+                        {
+                            type: 'Course-Category',
+                            id: '1',
+                            attributes: {
+                                title: 'Course Test',
+                            },
+                            relationships: {
+                                competencies: {
+                                    data: [
+                                        { id:'10', type:'Course-Competency' },
+                                        { id:'11', type:'Course-Competency' }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    included: [
+                        { id:'10', type:'Course-Competency', attributes: { name:'Course-Competency10'} },
+                        { id:'11', type:'Course-Competency', attributes: { name:'Course-Competency11' } }
+                    ]
+                }
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(responseData));
+            }, 30);
+
+            return test.config.CourseCategoryResource.findAll().then(function (categories) {
+                assert.isDefined(categories, 'data deserialized');
+                assert.equal(categories.length, 1, 'Should contain 1 "Course-Category"');
+                assert.isDefined(categories[0].competencies, 'Should have "competencies" realtionship defined');
+                assert.equal(categories[0].competencies.length, 2, 'Should have 2 child "competencies" ');
+
+                assert.equal(test.config.CourseCategoryResource.class, 'CourseCategory', 'Js-Data removes non standard java characters in type names');
+                assert.equal(test.config.CourseCategoryResource.endpoint, 'Course-Category', 'Js-Data uses endpoint when type contains non-java characters');
+
+                categories[0].title = 'Course Test(Updated)';
+                setTimeout(function () {
+                    assert.equal(2, _this.requests.length, "Second Call");
+                    var request = _this.requests[_this.requests.length - 1];
+
+                    assert.equal(request.requestBody, DSUtils.toJson({
+                        data: {
+                            id: '1',
+                            type: 'Course-Category',
+                            attributes: { title: 'Course Test(Updated)' }
+                        }
+                    }), 'Non standard type name serialized correctly as json request');
+
+                    // Just respond back with anything, initial request will do..
+                    request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, request.requestBody);
+                }, 30);
+
+                return test.config.CourseCategoryResource.save(categories[0].id);
+            }).then(function () { });
+        });
+
+
+    });
 });
