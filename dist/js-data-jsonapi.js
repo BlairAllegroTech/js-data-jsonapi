@@ -356,6 +356,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var jsonApiContentType = 'application/vnd.api+json';
 	exports.JSONAPI_RELATED_LINK = 'related';
 	exports.JSONAPI_PARENT_LINK = 'parent';
+	exports.JSONAPI_SELF_LINK = 'self';
 	var jsDataBelongsTo = 'belongsTo';
 	var jsDataHasMany = 'hasMany';
 	var jsDataHasOne = 'hasOne';
@@ -1036,7 +1037,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var relationshipDef = options.getRelationByLocalField(relationName);
 	                if (relationshipDef) {
 	                    if (relationshipDef.type === jsDataHasMany || relationshipDef.type === jsDataHasOne) {
-	                        metaData.WithRelationshipLink(relationshipDef.localField, exports.JSONAPI_RELATED_LINK, relationshipDef.relation, relationship.FindLinkType(exports.JSONAPI_RELATED_LINK));
+	                        var relatedLink = relationship.FindLinkType(exports.JSONAPI_RELATED_LINK);
+	                        if (relatedLink) {
+	                            metaData.WithRelationshipLink(relationshipDef.localField, exports.JSONAPI_RELATED_LINK, relationshipDef.relation, relatedLink);
+	                        }
+	                        var selfLink = relationship.FindLinkType(exports.JSONAPI_SELF_LINK);
+	                        if (selfLink) {
+	                            metaData.WithRelationshipLink(relationshipDef.localField, exports.JSONAPI_SELF_LINK, relationshipDef.relation, selfLink);
+	                        }
 	                        var hasData = (relationship.data && (!DSUTILS.isArray(relationship.data) ||
 	                            (DSUTILS.isArray(relationship.data) && relationship.data.length > 0)));
 	                        if (hasData) {

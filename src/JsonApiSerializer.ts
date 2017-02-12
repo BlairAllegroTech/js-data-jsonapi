@@ -13,6 +13,7 @@ export const JSONAPI_META: string = '$_JSONAPIMETA_';
 const jsonApiContentType: string = 'application/vnd.api+json';
 export const JSONAPI_RELATED_LINK: string = 'related';
 export const JSONAPI_PARENT_LINK: string = 'parent';
+export const JSONAPI_SELF_LINK: string = 'self';
 
 const jsDataBelongsTo: string = 'belongsTo';
 const jsDataHasMany: string = 'hasMany';
@@ -1069,13 +1070,24 @@ export class JsonApiHelper {
                     // We are only interestedin child relationships
                     // Add relationship to meta data, so that we can use this to lazy load relationship as required in the future
                     if (relationshipDef.type === jsDataHasMany || relationshipDef.type === jsDataHasOne) {
-                        metaData.WithRelationshipLink(
-                            relationshipDef.localField,
-                            JSONAPI_RELATED_LINK,
-                            relationshipDef.relation,
-                            relationship.FindLinkType(JSONAPI_RELATED_LINK)
-                        );
-
+                        var relatedLink = relationship.FindLinkType(JSONAPI_RELATED_LINK);
+                        if (relatedLink) {
+                            metaData.WithRelationshipLink(
+                                relationshipDef.localField,
+                                JSONAPI_RELATED_LINK,
+                                relationshipDef.relation,
+                                relatedLink
+                            );
+                        }
+                        var selfLink = relationship.FindLinkType(JSONAPI_SELF_LINK);
+                        if (selfLink) {
+                            metaData.WithRelationshipLink(
+                                relationshipDef.localField,
+                                JSONAPI_SELF_LINK,
+                                relationshipDef.relation,
+                                selfLink
+                            );
+                        }
 
                         // Data is truthy and is not an array or if an array is not empty
                         var hasData = (relationship.data && (

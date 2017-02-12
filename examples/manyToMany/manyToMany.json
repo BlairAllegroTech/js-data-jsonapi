@@ -1,4 +1,4 @@
-﻿{   
+﻿{
   "data": [
     {
       "type": "article",
@@ -9,8 +9,8 @@
       "relationships": {
         "authors": {
           "links": {
-            "self": "http://example.com/article/1/relationships/author",
-            "related": "http://example.com/article/1/author"
+            "self": "http://example.com/article/1/relationships/authors",
+            "related": "http://example.com/article/1/authors"
           },
           "data": [
             {"type": "person","id": "1"},
