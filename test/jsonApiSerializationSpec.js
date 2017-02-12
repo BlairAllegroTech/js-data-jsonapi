@@ -11,9 +11,9 @@
                     .WithAttribute('author', 'John')
                     .WithAttribute('age', 31));
 
-            testData.model = [{ Id: '2', author: 'John', age: 31}]; //ISMODEL: true, type: 'testuser'
+            testData.model = [{ Id: '2', author: 'John', age: 31 }]; //ISMODEL: true, type: 'testuser'
         });
-        
+
 
         it('should use a default primary key of "id" when deserializing model, when not specifed in datastore configuration', function () {
             var _this = this;
@@ -21,9 +21,9 @@
                 name: 'testuser'
                 //idAttribute: 'Id', intentionally not set 
             });
-            
-            
-            
+
+
+
             setTimeout(function () {
                 assert.equal(1, _this.requests.length, "First Call");
                 var request = _this.requests[_this.requests.length - 1];
@@ -36,32 +36,32 @@
                 assert.equal(request.requestBody, DSUtils.toJson({
                     data: {
                         //id: '', 
-                        type: 'testuser', 
+                        type: 'testuser',
                         attributes: { author: 'John', age: 31 }
                         //links: {}, 
                         //relationships: {}
                     }
                 }), 'Json data serialized to jsonApi data correctly');
-                
-                request.respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(testData.jsonApiData));
             }, 30);
-            
+
             return dsHttpAdapter.create(TestUser, { author: 'John', age: 31 }, { basePath: 'api' }).then(function (data) {
                 // We are not testing meta data yet
                 ignoreMetaData(data);
-                
+
                 assert.equal(data.id, testData.model.id, 'post should have extracted primary key from response and placed in model property, id');
             });
 
         });
-        
+
         it('should use a "Named" primary key when specifed in datastore configuration', function () {
             var _this = this;
             var TestUser = datastore.defineResource({
                 name: 'testuser',
                 idAttribute: 'TestPK'
             });
-            
+
 
             setTimeout(function () {
                 assert.equal(1, _this.requests.length, "First Call");
@@ -75,25 +75,68 @@
                 assert.equal(request.requestBody, DSUtils.toJson({
                     data: {
                         //id: '', 
-                        type: 'testuser', 
-                        attributes: { author: 'John', age: 32 } 
+                        type: 'testuser',
+                        attributes: { author: 'John', age: 32 }
                         //links: {}, 
                         //relationships: {}
                     }
                 }), 'Json data serialized to jsonApi data correctly');
-                
-                
-                request.respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
+
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(testData.jsonApiData));
             }, 30);
-            
+
             return dsHttpAdapter.create(TestUser, { author: 'John', age: 32 }, { basePath: 'api' }).then(function (data) {
                 assert.equal(data.TestPK, testData.model.id, 'post should have extracted primary key from response and placed in property "TestPK"');
 
             });
 
         });
-    
-        it('should extract and set ParentId from JsonApi self link and set jsdata belongsTo relationship local key', function () {
+    });
+
+    describe('Parent Keys', function () {
+        var ds, dsJsonApiAdapter;
+        var test = { config: {} };
+
+        beforeEach(function () {
+            ds = new JSData.DS();
+
+            dsJsonApiAdapter = new DSJsonApiAdapter.JsonApiAdapter({ queryTransform: queryTransform });
+            ds.registerAdapter('jsonApi', dsJsonApiAdapter, { default: true });
+
+            test.config.UserContainer = ds.defineResource({
+                name: 'container',
+                basePath: 'api',
+                idAttribute: 'Id',
+                relations: {
+                    // hasMany uses "localField" and "localKeys" or "foreignKey"
+                    hasMany: {
+                        posts: {
+                            localField: 'containedposts',
+                            foreignKey: 'containerid'
+                        }
+                    }
+                }
+            });
+
+            test.config.Post = ds.defineResource({
+                name: 'posts',
+                basePath: 'api',
+                idAttribute: 'Id',
+                relations: {
+                    belongsTo: {
+                        container: {
+                            localField: 'Container',
+                            localKey: 'containerid',
+                            //parent: true
+                        }
+                    }
+                }
+             });
+
+        });
+
+        it('should extract and set ParentId from JsonApi self link and set js-data belongsTo relationship local key', function () {
             var _this = this;
             
             setTimeout(function () {
@@ -105,7 +148,8 @@
                 assert.isDefined(request.requestHeaders, 'Request Contains headers');
                 assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
                 assert.include(request.requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
-                assert.equal(request.requestBody, DSUtils.toJson({
+
+                var expectedRequestData = {
                     data: {
                         //id: '',
                         type: 'posts',
@@ -113,21 +157,64 @@
                         //links: {},
                         //relationships: {}
                     }
-                }), 'Json data serialized to jsonApi data correctly');
-                
+                };
+
+                assert.equal(request.requestBody, DSUtils.toJson(expectedRequestData), 'Json data serialized to jsonApi data correctly');
                 // Newly created object should have a server generated id set
                 // Include json api self link, as required by Jsonapi spec
-                testData.jsonApiData.data[0].WithLink('self', '/container/1/post/2');
-                testData.model[0]['containerid'] = '1';
-                request.respond(200, { 'Content-Type': 'application/vnd.api+json' },  DSUtils.toJson(testData.jsonApiData));
+
+                expectedRequestData.data.id = '2';
+                expectedRequestData.data.links = { 'self': '/container/1/post/2' };
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(expectedRequestData));
             }, 30);
-            
-            return dsHttpAdapter.create(Post, { author: 'John', age: 31 }).then(function (data) {
-                //console.log('Should Equal:(data,expected)', [data, testData.model]);
-                
-                // We are not testing meta data yet
-                ignoreMetaData(data);
-                assert.deepEqual(data[0], testData.model[0], 'post should have been created with parent id set to "1"');
+
+            return test.config.Post.create({ author: 'John', age: 31 }).then(function (data) {
+                assert.isDefined(data, 'Should receive valid response');
+                assert.isDefined(data.containerid, 'Should have LocalKey on child');
+                assert.equal(data.containerid, 1, 'Should have set LocalKey to correct Parent Id');
+            });
+        });
+
+        it('should extract and set ParentId from JsonApi self link and set js-data belongsTo relationship local key, when resource endpoint configured', function () {
+            var _this = this;
+
+            test.config.UserContainer.endpoint = 'container-endpoint';
+
+            setTimeout(function () {
+                assert.equal(1, _this.requests.length, "First Call");
+                var request = _this.requests[_this.requests.length - 1];
+
+                assert.equal(request.url, 'api/posts');
+                assert.equal(request.method, 'POST');
+                assert.isDefined(request.requestHeaders, 'Request Contains headers');
+                assert.equal(request.requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api accept required header');
+                assert.include(request.requestHeaders['Content-Type'], 'application/vnd.api+json', 'Contains json api content-type header');
+
+                var expectedRequestData = {
+                    data: {
+                        //id: '',
+                        type: 'posts',
+                        attributes: { author: 'John', age: 31 }
+                        //links: {},
+                        //relationships: {}
+                    }
+                };
+
+                assert.equal(request.requestBody, DSUtils.toJson(expectedRequestData), 'Json data serialized to jsonApi data correctly');
+                // Newly created object should have a server generated id set
+                // Include json api self link, as required by Jsonapi spec
+
+                expectedRequestData.data.id = '2';
+                expectedRequestData.data.links = { 'self': '/container-endpoint/1/post/2' };
+
+                request.respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(expectedRequestData));
+            }, 30);
+
+            return test.config.Post.create({ author: 'John', age: 31 }).then(function (data) {
+                assert.isDefined(data, 'Should receive valid response');
+                assert.isDefined(data.containerid, 'Should have LocalKey on child');
+                assert.equal(data.containerid, 1, 'Should have set LocalKey to correct Parent Id');
             });
         });
     });

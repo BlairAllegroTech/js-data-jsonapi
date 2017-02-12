@@ -1382,9 +1382,10 @@ export class JsonApiHelper {
             // If found get the id and set to loalKey
             options.enumerateAllParentRelations((rel: JSData.RelationDefinition) => {
 
-                // If we find a parent/belongsTo relationship with the same type as the parent then use it.
+                // If we find a parent/belongsTo relationship with the emdpoint as the parent then use it.
                 // There should only ever be one parent relationship of a given type.
-                var parentResourceIndex = selfLinkArray.lastIndexOf(rel.relation);
+                var parentDefinition = options.getResource(rel.relation);
+                var parentResourceIndex = selfLinkArray.lastIndexOf(parentDefinition.def().endpoint);
 
                 if (parentResourceIndex >= 0 && rel.localKey) {
                     //We found a match
