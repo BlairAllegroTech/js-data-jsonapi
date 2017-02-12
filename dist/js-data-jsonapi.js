@@ -1,6 +1,6 @@
 /*!
 * js-data-jsonapi
-* @version 0.0.0-alpha.20 - Homepage <https://github.com/BlairAllegroTech/js-data-jsonapi>
+* @version 0.0.0-alpha.21 - Homepage <https://github.com/BlairAllegroTech/js-data-jsonapi>
 * @author Blair Jacobs
 * @copyright (c) 2016-2017 Blair Jacobs
 * @license MIT <https://github.com/BlairAllegroTech/js-data-jsonapi/blob/master/LICENSE>
@@ -324,11 +324,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.TryGetMetaData = TryGetMetaData;
 	;
 	exports.version = {
-	    full: '0.0.0-alpha.20',
+	    full: '0.0.0-alpha.21',
 	    major: parseInt('0', 10),
 	    minor: parseInt('0', 10),
 	    patch: parseInt('0', 10),
-	    alpha:  true ? '20' : false,
+	    alpha:  true ? '21' : false,
 	    beta:  true ? 'false' : false
 	};
 	//# sourceMappingURL=JsonApiAdapter.js.map
@@ -503,12 +503,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return (relation && relation[0]) ? relation[0] : null;
 	    };
 	    SerializationOptions.prototype.getChildRelationWithLocalField = function (relationType, localFieldName) {
-	        relationType = relationType.toLowerCase();
-	        localFieldName = localFieldName.toLowerCase();
+	        var localFieldNameLower = localFieldName.toLowerCase();
 	        var relations = this.getChildRelations(relationType);
 	        var match = null;
 	        DSUTILS.forEach(relations, function (relation) {
-	            if (relation.localField === localFieldName) {
+	            if (relation.localField === localFieldName || relation.localField === localFieldNameLower) {
 	                match = relation;
 	                return false;
 	            }
@@ -516,12 +515,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return match;
 	    };
 	    SerializationOptions.prototype.getChildRelationWithForeignKey = function (relationType, foreignKeyName) {
-	        relationType = relationType.toLowerCase();
-	        foreignKeyName = foreignKeyName.toLowerCase();
+	        var foreignKeyNameLower = foreignKeyName.toLowerCase();
 	        var relations = this.getChildRelations(relationType);
 	        var match = null;
 	        DSUTILS.forEach(relations, function (relation) {
-	            if (relation.foreignKey === foreignKeyName) {
+	            if (relation.foreignKey === foreignKeyName || relation.foreignKey === foreignKeyNameLower) {
 	                match = relation;
 	                return false;
 	            }
@@ -548,29 +546,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    };
 	    SerializationOptions.prototype.getChildRelations = function (relationType) {
-	        relationType = relationType.toLowerCase();
 	        if (this.resourceDef.relations) {
-	            if (this.resourceDef.relations.hasOne) {
-	                if (this.resourceDef.relations.hasOne[relationType]) {
-	                    return this.resourceDef.relations.hasOne[relationType];
-	                }
-	            }
-	            if (this.resourceDef.relations.hasMany) {
-	                if (this.resourceDef.relations.hasMany[relationType]) {
-	                    return this.resourceDef.relations.hasMany[relationType];
-	                }
-	            }
 	            var relationlower_1 = relationType.toLowerCase();
 	            var matches_1 = [];
 	            var relationList = this.resourceDef.relationList;
 	            DSUTILS.forEach(relationList, function (relation) {
 	                if (relation.type === jsDataHasMany || relation.type === jsDataHasOne) {
-	                    if (relationlower_1 === relation.relation) {
+	                    if (relationType === relation.relation) {
 	                        matches_1.push(relation);
+	                    }
+	                    else {
+	                        if (relationlower_1 === relation.relation) {
+	                            matches_1.push(relation);
+	                            LogInfo('Relation Case Insensitive match made of ' + relationType, matches_1);
+	                        }
 	                    }
 	                }
 	            });
-	            LogInfo('Relation Case Insensitive match made of ' + relationType, matches_1);
 	            return matches_1;
 	        }
 	        return null;
@@ -580,7 +572,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var relationList = this.resourceDef.relationList;
 	        var match = null;
 	        DSUTILS.forEach(relationList, function (relation) {
-	            if (relation.localField === relationlower) {
+	            if (relation.localField === relationName || relation.localField === relationlower) {
 	                match = relation;
 	                return false;
 	            }
@@ -1205,7 +1197,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (data.type && data.GetSelfLink && data.GetSelfLink()) {
 	            var selfLinkArray = data.GetSelfLink().split('/');
 	            options.enumerateAllParentRelations(function (rel) {
-	                var parentResourceIndex = selfLinkArray.lastIndexOf(rel.relation);
+	                var parentDefinition = options.getResource(rel.relation);
+	                var parentResourceIndex = selfLinkArray.lastIndexOf(parentDefinition.def().endpoint);
 	                if (parentResourceIndex >= 0 && rel.localKey) {
 	                    fields[rel.localKey] = selfLinkArray[parentResourceIndex + 1];
 	                    var parentLink = selfLinkArray.slice(0, parentResourceIndex + 2).join('/');
