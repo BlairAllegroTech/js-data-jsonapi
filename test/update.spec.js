@@ -252,11 +252,11 @@ describe('Update Tests', function () {
 
             setTimeout(function () {
                 var index = _this.requests.length-1;
-                assert.equal(index+1, _this.requests.length);
+                assert.equal(1, _this.requests.length);
                 assert.equal(_this.requests[index].url, 'author');
                 assert.equal(_this.requests[index].method, 'GET');
 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
+                _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
             }, 30);
 
             return testData.config.Author.findAll().then(function (data) {
