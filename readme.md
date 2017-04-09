@@ -19,20 +19,20 @@ See the [Project Wiki](https://github.com/BlairAllegroTech/js-data-jsonapi/wiki)
 |Goal|Status|Tests|
 |----|------|-----|
 |Serialize JsonApi requests|code complete |yes|
-|When deserializing JsonApi data add 'ParentIds' so that js-data **belongsTo** relationships can work|code complete|yes|
-|When deserializing JsonApi data add **'LocalKey/LocalKeys'** or **'ForeignKeys'** depending on js-data configurations so that js-data **hasOne** and **hasMany** relationships can work|code complete|yes|
-|Add metadata to indicate if an object is a jsonApi reference, indicating that it is partially populated only|code complete|yes|
-|Transparently request full objects when requested from js-data cache and object is a jsonApi reference only, e.g. Not fully populated| code complete|yes|
-|Store hyperlinking data within metadata of stored data|code complete|yes|
-|Use metadata hyperlinks to request related data from JsonApi data store|complete|yes|
-|Use metadata hyperlinks to add new items to relationships|Not started|No|
+|When deserializing JsonApi data add 'ParentIds' so that js-data **belongsTo** relationships can work|code complete|Yes|
+|When deserializing JsonApi data add **'LocalKey/LocalKeys'** or **'ForeignKeys'** depending on js-data configurations so that js-data **hasOne** and **hasMany** relationships can work|code complete|Yes|
+|Add metadata to indicate if an object is a jsonApi reference, indicating that it is partially populated only|code complete|Yes|
+|Transparently request full objects when requested from js-data cache and object is a jsonApi reference only, e.g. Not fully populated| code complete|Yes|
+|Store hyperlinking data within metadata of stored data|code complete|Yes|
+|Use metadata hyperlinks to request related data from JsonApi data store|complete|Yes|
+|Use metadata hyperlinks to add new items to relationships|In Progress|Yes|
 
 ### Known Issues
 1. Test coverage is pretty good.~~Testing is by no means complete, there are many more scenarios that need to be covered off~~ 
     * **(Done)**.
 2. None of the xxxxAll adapter methods have been tested yet. e.g  ~~findAll,~~ destroyAll, updateAll
     * findAll **(done)**
-3. Bower package has not been tested
+3. ~~Bower package has not been tested
 4. The code creates the DSHttpDataAdapter internally.
     * Allow the adapter to be injected or a constructor function passed via constructor options. **(Done)**
 5. Code is some what brittle in terms of requiring your js-data configuration to match very closely your jsonApi
