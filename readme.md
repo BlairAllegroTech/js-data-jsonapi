@@ -1,11 +1,11 @@
-﻿﻿#js-data-jsonapi
+﻿﻿# js-data-jsonapi
 
 [![npm version][npm_v_badge]][npm_link]
 [![npm downloads][npm_dwn_badge]][npm_link]
 [![cicleci build][circleci_badge]][circleci_link]
 [![Coveralls][coverage_badge]][coverage_link]
 
-###JsonApi Adapter for [js-data](http://www.js-data.io) 
+### JsonApi Adapter for [js-data](http://www.js-data.io) 
 This adapter implements the [JsonApi Protocol](http://jsonapi.org/) and ties it to a js-data data store.
 
 It ties 
@@ -15,10 +15,11 @@ It ties
 See the [Project Wiki](https://github.com/BlairAllegroTech/js-data-jsonapi/wiki) site for more information and examples (under construction)
 
 
-##Goals
+## Goals
+
 |Goal|Status|Tests|
 |----|------|-----|
-|Serialize JsonApi requests|code complete |yes|
+|Serialize JsonApi requests|code complete |Yes|
 |When deserializing JsonApi data add 'ParentIds' so that js-data **belongsTo** relationships can work|code complete|Yes|
 |When deserializing JsonApi data add **'LocalKey/LocalKeys'** or **'ForeignKeys'** depending on js-data configurations so that js-data **hasOne** and **hasMany** relationships can work|code complete|Yes|
 |Add metadata to indicate if an object is a jsonApi reference, indicating that it is partially populated only|code complete|Yes|
