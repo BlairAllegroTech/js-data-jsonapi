@@ -159,7 +159,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 	            else {
-	                if (method === 'update') {
+	                if (method === 'update' || method === 'destroy') {
 	                    var metaData = Helper.MetaData.TryGetMetaData(item);
 	                    if (metaData && metaData.selfLink) {
 	                        jsonApiPath = metaData.selfLink;

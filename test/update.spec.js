@@ -9,7 +9,7 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].url, 'api/posts/1');
                 assert.equal(_this.requests[0].method, 'PATCH');
                 assert.isDefined(_this.requests[0].requestHeaders);
-                assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                assert.include(_this.requests[0].requestHeaders.Accept, 'application/vnd.api+json', 'Contains json api content-type header');
                 assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({
                     data: {
                         id: '1',
@@ -33,7 +33,7 @@ describe('Update Tests', function () {
                     assert.equal(_this.requests[1].url, 'api2/posts/1');
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
-                    assert.include(_this.requests[1].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                    assert.include(_this.requests[1].requestHeaders.Accept, 'application/vnd.api+json', 'Contains json api content-type header');
                     assert.equal(_this.requests[1].requestBody, DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } }));
 
                     _this.requests[1].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(p1.jsonApiData));
@@ -58,7 +58,7 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].url, 'api/posts/1');
                 assert.equal(_this.requests[0].method, 'PUT');
                 assert.isDefined(_this.requests[0].requestHeaders);
-                assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                assert.include(_this.requests[0].requestHeaders.Accept, 'application/vnd.api+json', 'Contains json api content-type header');
                 assert.equal(_this.requests[0].requestBody, DSUtils.toJson(
                     { data: { id: '1', type: 'posts', attributes: { author: 'John', age: 30 } } })
                 );
@@ -78,7 +78,7 @@ describe('Update Tests', function () {
                     assert.equal(_this.requests[1].url, 'api2/posts/1');
                     assert.equal(_this.requests[1].method, 'PATCH');
                     assert.isDefined(_this.requests[1].requestHeaders);
-                    assert.include(_this.requests[1].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                    assert.include(_this.requests[1].requestHeaders.Accept, 'application/vnd.api+json', 'Contains json api content-type header');
                     assert.equal(_this.requests[1].requestBody, DSUtils.toJson(
                         { data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30 } } })
                     );
@@ -105,7 +105,7 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].url, 'api/posts/1');
                 assert.equal(_this.requests[0].method, 'PUT');
                 assert.isDefined(_this.requests[0].requestHeaders);
-                assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                assert.include(_this.requests[0].requestHeaders.Accept, 'application/vnd.api+json', 'Contains json api content-type header');
                 assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
 
                 p1.model.Id = '1';
@@ -128,7 +128,7 @@ describe('Update Tests', function () {
                 assert.equal(_this.requests[0].url, 'api/posts/1');
                 assert.equal(_this.requests[0].method, 'PATCH');
                 assert.isDefined(_this.requests[0].requestHeaders);
-                assert.include(_this.requests[0].requestHeaders['Accept'], 'application/vnd.api+json', 'Contains json api content-type header');
+                assert.include(_this.requests[0].requestHeaders.Accept, 'application/vnd.api+json', 'Contains json api content-type header');
                 assert.equal(_this.requests[0].requestBody,  DSUtils.toJson({ data: { id: "1", type: 'posts', attributes: { author: 'John', age: 30, type: 'person' } } }));
 
                 p1.model.Id = '1';
@@ -252,11 +252,11 @@ describe('Update Tests', function () {
 
             setTimeout(function () {
                 var index = _this.requests.length-1;
-                assert.equal(index+1, _this.requests.length);
+                assert.equal(1, _this.requests.length);
                 assert.equal(_this.requests[index].url, 'author');
                 assert.equal(_this.requests[index].method, 'GET');
 
-                _this.requests[0].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
+                _this.requests[index].respond(200, { 'Content-Type': 'application/vnd.api+json' }, DSUtils.toJson(response));
             }, 30);
 
             return testData.config.Author.findAll().then(function (data) {
